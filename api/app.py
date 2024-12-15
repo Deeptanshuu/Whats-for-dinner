@@ -7,12 +7,15 @@ from sklearn.metrics.pairwise import cosine_similarity
 import re
 import time
 import concurrent.futures
+from pathlib import Path
+
+DATASET = Path(__file__).resolve().parent.parent / 'data' / 'recipes.csv'
 
 app = Flask(__name__)
 CORS(app)
 
 # Load your dataset
-recipes_data = pd.read_csv('7k-dataset.csv')
+recipes_data = pd.read_csv(DATASET)
 
 # Clean column names
 recipes_data.columns = recipes_data.columns.str.strip()
@@ -157,7 +160,7 @@ def recipe():
     if not name:
         return jsonify({"error": "Recipe name is required"}), 400
 
-    recipes_data = pd.read_csv("7k-dataset.csv")
+    recipes_data = pd.read_csv(DATASET)
 
     # Strip spaces from column names
     recipes_data.columns = recipes_data.columns.str.strip()
