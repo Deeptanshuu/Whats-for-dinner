@@ -1,1 +1,9 @@
-Visual/cache_dir/*
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+node_modules/
+web/dist/
+.env
+.DS_Store
