@@ -1,7 +1,8 @@
 """Builds every ranker by name so the evaluation and the API share one list.
 
-The embedding ranker loads its vectors from models/ when they are there and
-trains in memory when they are not.
+The embedding and learned rankers load their artefacts from models/ when they
+are there (``python -m recsys.train`` writes them) and train in memory when
+they are not.
 """
 from __future__ import annotations
 
@@ -10,6 +11,7 @@ import pandas as pd
 from .baselines import BruteForceRanker, TfidfRanker
 from .data import Vocabulary
 from .embeddings import VECTORS_PATH, EmbeddingRanker, IngredientIndex, OverlapRanker, load_vectors, train_vectors
+from .ranker import FeatureBuilder, LearnedRanker, load_ranker, train_ranker
 
 
 class _Parts:
@@ -43,6 +45,26 @@ class _Parts:
             return EmbeddingRanker(self.recipes, self.vocab, vectors, self.index())
         return self.get("embedding", make)
 
+    def learned(self):
+        def make():
+            from .evaluate import build_queries
+
+            loaded = load_ranker()
+            if loaded is not None:
+                booster, meta = loaded
+                features = self._features(meta["n_candidates"])
+            else:
+                features = self._features()
+                queries = build_queries(self.recipes, self.vocab, "tune")
+                booster, _ = train_ranker(features, [q for qs in queries.values() for q in qs])
+            return LearnedRanker(features, booster, len(self.recipes))
+        return self.get("learned", make)
+
+    def _features(self, n_candidates: int | None = None) -> FeatureBuilder:
+        kwargs = {} if n_candidates is None else {"n_candidates": n_candidates}
+        return FeatureBuilder(self.recipes, self.vocab, self.embedding(), tfidf=self.tfidf(),
+                              overlap=self.overlap(), **kwargs)
+
 
 def build_rankers(recipes: pd.DataFrame, vocab: Vocabulary, only: list[str] | None = None) -> dict:
     parts = _Parts(recipes, vocab)
@@ -51,6 +73,7 @@ def build_rankers(recipes: pd.DataFrame, vocab: Vocabulary, only: list[str] | No
         "tfidf": parts.tfidf,
         "overlap": parts.overlap,
         "embedding": parts.embedding,
+        "learned": parts.learned,
     }
     names = only or list(builders)
     return {name: builders[name]() for name in names}
