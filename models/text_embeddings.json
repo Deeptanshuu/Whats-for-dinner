@@ -1,0 +1,13 @@
+{
+  "model": "sentence-transformers/all-MiniLM-L6-v2",
+  "rows": 6521,
+  "dim": 384,
+  "fields": [
+    "title",
+    "description",
+    "cuisine",
+    "course",
+    "ingredients"
+  ],
+  "hash": "3204b3d2920c1059ee0a3ab761604ce98cc8752582b677ac80a6ae384a108155"
+}
