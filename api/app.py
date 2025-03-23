@@ -1,279 +1,227 @@
-from flask import Flask, request, jsonify
+"""Flask app for the recipe recommender.
+
+``create_app()`` builds the app and loads the catalogue once. With
+``RECSYS_WARM=1`` a background thread builds the default ranker and the
+semantic index so the first request is not slow.
+"""
+# Small matrix products are much slower with many BLAS threads, so pin them
+# before numpy is imported.
+import os
+
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+
+import threading  # noqa: E402
+import time  # noqa: E402
+
+from flask import Flask, jsonify, request
 from flask_cors import CORS
-import pandas as pd
-import numpy as np
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-import re
-import time
-import concurrent.futures
-from pathlib import Path
+from werkzeug.exceptions import HTTPException
 
-DATASET = Path(__file__).resolve().parent.parent / 'data' / 'recipes.csv'
+from recsys.service import DEFAULT_MODEL, MODEL_IDS, Recommender, RecipeNotFound
 
-app = Flask(__name__)
-CORS(app)
+MAX_ITEMS = 50
+MAX_TEXT = 200
+MAX_LIMIT = 100
+MAX_SIMILAR = 48
 
-# Load your dataset
-recipes_data = pd.read_csv(DATASET)
 
-# Clean column names
-recipes_data.columns = recipes_data.columns.str.strip()
+class ApiError(Exception):
+    def __init__(self, message: str, status: int = 400):
+        super().__init__(message)
+        self.message = message
+        self.status = status
 
-# Define weights for user preferences
-cuisine_weight = 0.2
-course_weight = 0.3
 
-# Prepare TF-IDF vectorizer
-vectorizer = TfidfVectorizer(binary=True)
+# ----- request parsing -----
 
-# Check if 'ingredients' column exists, if not, use 'ingredients_name'
-ingredients_column = 'ingredients' if 'ingredients' in recipes_data.columns else 'ingredients_name'
+def _body() -> dict:
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        raise ApiError("Request body must be a JSON object")
+    return data
 
-if ingredients_column not in recipes_data.columns:
-    raise ValueError(f"Neither 'ingredients' nor 'ingredients_name' column found in the dataset. Available columns are: {recipes_data.columns.tolist()}")
 
-# Extract and join ingredients into text
-recipes_data["ingredients_list"] = recipes_data[ingredients_column].apply(lambda x: str(x).strip().split(","))
-recipes_data["ingredients_text"] = recipes_data["ingredients_list"].apply(lambda x: " ".join(x))
-
-# Fit vectorizer and transform recipe ingredients
-recipe_vectors = vectorizer.fit_transform(recipes_data["ingredients_text"])
-
-# Update the calculate_weighted_similarity function
-def calculate_weighted_similarity(similarity, recipe, user_cuisine, user_course):
-    user_pref_similarity = 0
-    if user_cuisine and 'cuisine' in recipe:
-        # Use the same logic as brute force method
-        if any(c.lower() in recipe['cuisine'].lower() for c in user_cuisine):
-            user_pref_similarity += cuisine_weight
-    if user_course and 'course' in recipe:
-        # Use the same logic as brute force method
-        if user_course.lower() in recipe['course'].lower():
-            user_pref_similarity += course_weight
-    weighted_similarity = similarity * (1 - (cuisine_weight + course_weight)) + user_pref_similarity
-    return weighted_similarity
-
-def calculate_difficulty(prep_time, cooking_time):
-    try:
-        total_time = float(prep_time) + float(cooking_time)
-        if total_time < 30:
-            return 'Easy'
-        elif total_time < 60:
-            return 'Medium'
-        else:
-            return 'Hard'
-    except ValueError:
-        return 'unknown'
-
-def calculate_servings(prep_time, cooking_time):
-    try:
-        total_time = float(prep_time) + float(cooking_time)
-        if total_time < 30:
-            return '1 - 2 Servings'
-        elif total_time < 60:
-            return '4 - 6 Servings'
-        else:
-            return '6+ Servings'
-    except ValueError:
-        return 'unknown'
-
-# Update the recommend_recipes function
-def recommend_recipes(user_ingredients, user_cuisine, user_course, user_veg):
-    # Filter vegetarian recipes if requested
-    filtered_recipes = recipes_data[recipes_data['diet'].str.strip().str.lower() == "vegetarian"] if user_veg else recipes_data
-
-    # # Filter by cuisine and course if provided
-    # if user_cuisine:
-    #     filtered_recipes = filtered_recipes[filtered_recipes['cuisine'].str.lower().apply(lambda x: any(c.lower() in x for c in user_cuisine))]
-    # if user_course:
-    #     filtered_recipes = filtered_recipes[filtered_recipes['course'].str.lower().str.contains(user_course.lower())]
-
-    # If no recipes match the filters, return an empty list
-    if filtered_recipes.empty:
+def _str_list(data: dict, key: str) -> list[str]:
+    value = data.get(key, [])
+    if value is None:
         return []
+    if isinstance(value, str):
+        value = [value] if value.strip() else []
+    if not isinstance(value, list) or not all(isinstance(v, str) for v in value):
+        raise ApiError(f"'{key}' must be a list of strings")
+    if len(value) > MAX_ITEMS:
+        raise ApiError(f"'{key}' can hold at most {MAX_ITEMS} items")
+    if any(len(v) > MAX_TEXT for v in value):
+        raise ApiError(f"Items in '{key}' can be at most {MAX_TEXT} characters")
+    return [v.strip() for v in value if v.strip()]
 
-    # Transform user input
-    user_ingredients_text = " ".join(user_ingredients)
-    user_vector = vectorizer.transform([user_ingredients_text])
 
-    # Calculate cosine similarity
-    similarities = cosine_similarity(user_vector, recipe_vectors[filtered_recipes.index]).flatten()
+def _text(data: dict, key: str, required: bool = False) -> str:
+    value = data.get(key, "")
+    if value is None:
+        value = ""
+    if not isinstance(value, str):
+        raise ApiError(f"'{key}' must be a string")
+    value = value.strip()
+    if len(value) > MAX_TEXT:
+        raise ApiError(f"'{key}' can be at most {MAX_TEXT} characters")
+    if required and not value:
+        raise ApiError(f"'{key}' is required")
+    return value
 
-    # Calculate weighted similarity for each recipe
-    weighted_similarities = [
-        calculate_weighted_similarity(sim, filtered_recipes.iloc[idx], user_cuisine, user_course)
-        for idx, sim in enumerate(similarities)
-    ]
 
-    # Get top 24 recommendations
-    top_n_indices = np.argsort(weighted_similarities)[-24:][::-1]
-    top_recipes = filtered_recipes.iloc[top_n_indices]
+def _bool(data: dict, key: str) -> bool:
+    value = data.get(key, False)
+    if value is None:
+        return False
+    if not isinstance(value, bool):
+        raise ApiError(f"'{key}' must be true or false")
+    return value
 
-    # Use multithreading for preparing recommendations
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        recommendations = list(executor.map(
-            lambda args: prepare_recommendation(*args),
-            [(count, row) for count, (_, row) in enumerate(top_recipes.iterrows(), start=1)]
-        ))
 
-    return recommendations
+def _int(value, key: str, low: int, high: int) -> int:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ApiError(f"'{key}' must be an integer")
+    if not low <= value <= high:
+        raise ApiError(f"'{key}' must be between {low} and {high}")
+    return value
 
-@app.route('/api/recommend-ai', methods=['POST'])
-def recommend_recipes_api():
-    start_time = time.time()
-    data = request.json
 
-    user_ingredients = data.get('ingredients', [])
-    user_cuisine = data.get('cuisine', [])
-    user_course = data.get('course', '')
-    user_veg = data.get('veg', False)
+def _limit(data: dict, default: int) -> int:
+    value = data.get("limit")
+    return default if value is None else _int(value, "limit", 1, MAX_LIMIT)
 
-    recommendations = recommend_recipes(user_ingredients, user_cuisine, user_course, user_veg)
 
-    end_time = time.time()
-    execution_time = (end_time - start_time) * 1000  # Convert to milliseconds
+def _model(data: dict, default: str) -> str:
+    value = data.get("model") or default
+    if not isinstance(value, str) or value not in MODEL_IDS:
+        raise ApiError(f"'model' must be one of: {', '.join(MODEL_IDS)}")
+    return value
 
-    return jsonify({
-        'recommendations': recommendations,
-        'execution_time': round(execution_time, 2),  # Round to 2 decimal places
-    })
 
-def prepare_recommendation(count, row):
-    return {
-        'id': count,
-        'title': row['name'].strip(),
-        'difficulty': calculate_difficulty(row['prep_time'], row['cook_time']),
-        'cooking_time': row['cook_time'].strip(),
-        'image': row['image_url'].strip(),
-        'veg': row['diet'].strip().lower() == 'vegetarian',
-        'cuisine': row['cuisine'].strip(),
-        'course': row['course'].strip(),
-        'servings': calculate_servings(row['prep_time'], row['cook_time']),
-    }
+def _liked(data: dict) -> list[int]:
+    value = data.get("liked", [])
+    if value is None:
+        return []
+    if not isinstance(value, list) or len(value) > 200:
+        raise ApiError("'liked' must be a list of recipe ids (at most 200)")
+    return [_int(v, "liked", 0, 10**9) for v in value]
 
-@app.route('/api/recipe', methods=['POST'])
-def recipe():
-    data = request.json
-    name = data.get('name', '').strip().lower()  # Normalize input
 
-    if not name:
-        return jsonify({"error": "Recipe name is required"}), 400
+def _warm(rec: Recommender, app: Flask) -> None:
+    try:
+        rec.warm()
+    except Exception:
+        app.logger.exception("Warm-up failed")
 
-    recipes_data = pd.read_csv(DATASET)
 
-    # Strip spaces from column names
-    recipes_data.columns = recipes_data.columns.str.strip()
+def _ms(start: float) -> float:
+    return round((time.perf_counter() - start) * 1000, 2)
 
-    # Normalize recipe names in the dataset for comparison
-    recipes_data['name'] = recipes_data['name'].str.strip().str.lower()
 
-    # Find the recipe
-    recipe_list = recipes_data[recipes_data['name'] == name].to_dict('records')
+def _query_limit(default: int, high: int) -> int:
+    raw = request.args.get("limit")
+    if raw is None or raw == "":
+        return default
+    try:
+        value = int(raw)
+    except ValueError:
+        raise ApiError("'limit' must be an integer") from None
+    if not 1 <= value <= high:
+        raise ApiError(f"'limit' must be between 1 and {high}")
+    return value
 
-    if not recipe_list:
-        return jsonify({"error": "Recipe not found"}), 404
 
-    recipe = recipe_list[0]
+def create_app(recommender: Recommender | None = None, warm: bool | None = None) -> Flask:
+    app = Flask(__name__)
+    app.config["MAX_CONTENT_LENGTH"] = 1024 * 1024
+    app.json.sort_keys = False
+    origins = [o.strip() for o in os.environ.get("CORS_ORIGINS", "*").split(",") if o.strip()]
+    CORS(app, origins=origins)
+    rec = recommender or Recommender()
+    app.extensions["recommender"] = rec
+    if warm is None:
+        warm = os.environ.get("RECSYS_WARM", "0") == "1"
+    if warm:
+        threading.Thread(target=_warm, args=(rec, app), name="warm-up", daemon=True).start()
 
-    # Calculate difficulty and servings
-    difficulty = calculate_difficulty(recipe.get('prep_time'), recipe.get('cook_time'))
-    servings = calculate_servings(recipe.get('prep_time'), recipe.get('cook_time'))
+    @app.post("/api/recommend")
+    def recommend():
+        data = _body()
+        ingredients = _str_list(data, "ingredients")
+        cuisine = _str_list(data, "cuisine")
+        course = _text(data, "course")
+        veg = _bool(data, "veg")
+        liked = _liked(data)
+        limit = _limit(data, 24)
+        model = _model(data, DEFAULT_MODEL)
+        if not (ingredients or cuisine or course or liked):
+            raise ApiError("Give at least one ingredient, cuisine, course or liked recipe")
+        start = time.perf_counter()
+        used = rec.resolve_model(model)
+        results = rec.recommend(ingredients, cuisine, course, veg, used, liked, limit)
+        return jsonify({"recommendations": results, "execution_time": _ms(start), "model": used})
 
-    # Prepare the response
-    response = {
-        'name': recipe.get('name').title(),  # Convert back to title case for response
-        'description': recipe.get('description'),
-        'veg': recipe.get('diet').strip().lower() == 'vegetarian',  # Handle potential extra spaces
-        'image': recipe.get('image_url'),
-        'cooking_time': f"{recipe.get('prep_time', 0)} + {recipe.get('cook_time', 0)} mins",
-        'serving_size': servings,
-        'difficulty': difficulty,
-        'course': recipe.get('course'),
-        'cooking_ingredients': recipe.get('ingredients_name'),
-        'cooking_instruction': recipe.get('instructions')
-    }
+    @app.post("/api/search")
+    def search():
+        data = _body()
+        query = _text(data, "query", required=True)
+        cuisine = _str_list(data, "cuisine")
+        course = _text(data, "course")
+        veg = _bool(data, "veg")
+        limit = _limit(data, 24)
+        start = time.perf_counter()
+        results = rec.search(query, veg=veg, limit=limit, cuisine=cuisine, course=course)
+        return jsonify({"recommendations": results, "execution_time": _ms(start), "model": "search"})
 
-    return jsonify(response)
+    @app.get("/api/recipe/<int:recipe_id>")
+    def recipe_by_id(recipe_id: int):
+        return jsonify(rec.recipe(recipe_id))
 
-def brute_force_recommend(ingredients, cuisine, course, cravings, veg):
-    # Preprocess input
-    ingredients = [preprocess_text(ing) for ing in ingredients]
-    cuisine = [preprocess_text(c) for c in cuisine]
-    course = preprocess_text(course)
-    cravings = [preprocess_text(crv) for crv in cravings]
+    @app.get("/api/recipe/<int:recipe_id>/similar")
+    def similar(recipe_id: int):
+        limit = _query_limit(12, MAX_SIMILAR)
+        start = time.perf_counter()
+        results = rec.similar(recipe_id, limit)
+        return jsonify({"recommendations": results, "execution_time": _ms(start)})
 
-    # Create a copy of the dataframe to avoid modifying the original
-    df_copy = recipes_data.copy()
+    @app.get("/api/meta")
+    def meta():
+        return jsonify(rec.meta())
 
-    # Preprocess dataframe columns
-    df_copy['ingredients_name'] = df_copy['ingredients_name'].apply(preprocess_text)
-    df_copy['cuisine'] = df_copy['cuisine'].apply(preprocess_text)
-    df_copy['course'] = df_copy['course'].apply(preprocess_text)
-    df_copy['description'] = df_copy['description'].apply(preprocess_text)
+    @app.get("/api/health")
+    def health():
+        return jsonify({"status": "ok", "recipes": rec.meta()["recipes"], "ready": rec.ready()})
 
-    # Filter by veg/non-veg
-    if veg:
-        df_copy = df_copy[df_copy['diet'].str.strip().str.lower() == "vegetarian"]
+    # ----- errors -----
 
-    # Calculate match scores
-    df_copy['ingredient_match'] = df_copy['ingredients_name'].apply(lambda x: sum(ing in x for ing in ingredients))
-    df_copy['cuisine_match'] = df_copy['cuisine'].apply(lambda x: any(c in x for c in cuisine))
-    df_copy['course_match'] = df_copy['course'].apply(lambda x: course in x)
-    df_copy['craving_match'] = df_copy['description'].apply(lambda x: any(crv in x for crv in cravings))
+    @app.errorhandler(ApiError)
+    def _api_error(err: ApiError):
+        return jsonify({"error": err.message}), err.status
 
-    # Calculate total score
-    df_copy['total_score'] = (
-        df_copy['ingredient_match'] * 3 +  # Prioritize ingredient matches
-        df_copy['cuisine_match'] * 2 +
-        df_copy['course_match'] * 2 +
-        df_copy['craving_match']
-    )
+    @app.errorhandler(RecipeNotFound)
+    def _not_found(err: RecipeNotFound):
+        message = "Recipe not found"
+        return jsonify({"error": message, "detail": str(err)}), 404
 
-    # Sort by total score and get top 24 results
-    results = df_copy.sort_values('total_score', ascending=False).head(24)
-    time.sleep(0.08)
-    # Prepare results for JSON serialization
-    recommendations = []
-    for _, row in results.iterrows():
-        recommendations.append({
-            'id': row.name,  # Use the index as id
-            'title': row['name'],
-            'difficulty': calculate_difficulty(row['prep_time'], row['cook_time']),
-            'cooking_time': row['cook_time'],
-            'image': row['image_url'],
-            'veg': row['diet'].strip().lower() == 'vegetarian',
-            'cuisine': row['cuisine'],
-            'course': row['course'],
-            'servings': calculate_servings(row['prep_time'], row['cook_time']),
-        })
+    @app.errorhandler(HTTPException)
+    def _http_error(err: HTTPException):
+        return jsonify({"error": err.description or err.name}), err.code
 
-    return recommendations
+    @app.errorhandler(Exception)
+    def _server_error(err: Exception):
+        app.logger.exception("Unhandled error")
+        return jsonify({"error": "Internal server error"}), 500
 
-def preprocess_text(text):
-    # Convert to lowercase and remove special characters
-    return re.sub(r'[^a-zA-Z0-9\s]', '', str(text).lower())
+    return app
 
-@app.route('/api/recommend-brute-force', methods=['POST'])
-def recommend_brute_force():
-    start_time = time.time()
-    data = request.json
-    ingredients = data.get('ingredients', [])
-    cuisine = data.get('cuisine', [])
-    course = data.get('course', '')
-    cravings = data.get('craving', [])
-    veg = data.get('veg', False)
 
-    recommendations = brute_force_recommend(ingredients, cuisine, course, cravings, veg)
-    
-    
-    end_time = time.time()
-    execution_time = (end_time - start_time) * 1000  # Convert to milliseconds
+def main() -> None:
+    os.environ.setdefault("RECSYS_WARM", "1")
+    app = create_app()
+    app.run(host=os.environ.get("HOST", "127.0.0.1"), port=int(os.environ.get("PORT", "5000")))
 
-    return jsonify({
-        'recommendations': recommendations,
-        'execution_time': round(execution_time, 2)  # Round to 2 decimal places
-    })
 
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    main()
