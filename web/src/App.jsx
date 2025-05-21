@@ -3,10 +3,12 @@ import Home from './components/Home';
 import Recipe from './components/Recipe';
 import Loading from './components/Loading';
 import Footer from './components/Footer';
+import WarningHeader from './components/WarningHeader';
 
 function App() {
   return (
     <div className="App">
+      <WarningHeader />
       <Router>
         <Routes>
           <Route path="/" element={<Home />} />
