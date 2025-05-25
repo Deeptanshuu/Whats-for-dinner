@@ -1,7 +1,11 @@
 # RecipeSense: plan for an ML recommender
 
 A plan for replacing the keyword ranker with a learned recommender, plus what
-an audit of the current code found. Nothing here is built yet.
+an audit of the original code found.
+
+Status: built. Results and what they mean are in the [README](../README.md).
+One thing did not go to plan: the ingredient embeddings do not improve the
+ranker, so they are used for "more like this" only.
 
 ## Goal
 
