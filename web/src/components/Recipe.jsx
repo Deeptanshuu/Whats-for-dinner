@@ -113,7 +113,14 @@ const Recipe = () => {
           <p className="px-3 py-1 w-24 my-2 text-center rounded-full font-semibold bg-red-300 text-red-800">Non-Veg</p>
         }
 
-        {recipe.image && <img src={recipe.image} alt={recipe.name} className="w-full h-96 object-cover rounded-lg mb-6" />}
+        {recipe.image && (
+          <img
+            src={recipe.image}
+            alt={recipe.name}
+            className="w-full h-96 object-cover rounded-lg mb-6"
+            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+          />
+        )}
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           {[['Prep', recipe.prep_time], ['Cook', recipe.cook_time], ['Total', recipe.total_time]].map(([label, value]) => {

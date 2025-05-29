@@ -27,7 +27,7 @@ what a person opens or likes.
 |---|---|
 | Brute force mode | A substring counter with a `time.sleep(0.08)` in it, so the "faster than brute force" readout is not real. Keep it only as an offline baseline |
 | Servings and difficulty on the cards | Both are made up from cooking time |
-| `Server/`, `testing/`, `Visual/`, `stuff/`, the root `yes-chef/` | Old copies, committed `node_modules` and build output, five copies of the dataset |
+| `Server/`, `testing/`, `Visual/`, `stuff/`, the old frontend copy at the root | Old copies, committed `node_modules` and build output, five copies of the dataset |
 
 ## What to build
 

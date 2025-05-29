@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 
-const KEY = 'yeschef:likes';
+const KEY = 'recipesense:likes';
 
 function read() {
   try {

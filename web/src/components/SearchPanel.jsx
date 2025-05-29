@@ -119,7 +119,7 @@ const SearchPanel = ({
         <X size={24} />
       </button>
 
-      <h2 className="text-4xl p-1 pl-10 font-bold mb-3 text-gray-800">What&apos;s for Dinner ?</h2>
+      <h2 className="text-4xl p-1 pl-10 font-bold mb-3 text-gray-800">RecipeSense</h2>
 
       <div className="flex items-center md:p-3 pb-3">
         <p className="text-base font-semibold mx-2 mb-2 px-3 py-1 rounded-full bg-green-300 text-green-700">Veg Mode</p>
