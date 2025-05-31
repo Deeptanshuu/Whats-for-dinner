@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RecipeSense ranker results</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gelasio:ital,wght@0,400;0,500;0,600;0,700;1,400&display=block" rel="stylesheet">
+<style>
+  :root { --ink: #1f2937; --ink-2: #4b5563; --ink-3: #78716c; --base: #d6d3d1; --grid: #e7e5e4;
+          --weak-bg: #fca5a5; --weak-ink: #991b1b; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #fff; font-family: Gelasio, Georgia, serif; color: var(--ink); padding: 20px; }
+  #frame { width: 836px; background: #fff; padding: 30px 30px 22px; }
+  h1 { font-size: 25px; font-weight: 700; }
+  .sub { margin-top: 6px; font-size: 15px; color: var(--ink-2); }
+  .grid { margin-top: 26px; display: grid; grid-template-columns: 196px repeat(3, 1fr); column-gap: 22px; }
+  .ph { font-size: 17px; font-weight: 700; padding-bottom: 2px; }
+  .pd { font-size: 12.5px; color: var(--ink-3); line-height: 1.3; padding-bottom: 12px; min-height: 44px; }
+  .name { font-size: 15.5px; text-align: right; height: 46px; display: flex; align-items: center; justify-content: flex-end; color: var(--ink); }
+  .name.hl { font-weight: 700; }
+  .cell { height: 46px; display: flex; align-items: center; position: relative; }
+  .track { position: relative; flex: 1; height: 100%; margin-right: 58px; }
+  .bar { position: absolute; left: 0; top: 50%; height: 16px; transform: translateY(-50%); background: var(--base); border-radius: 0 3px 3px 0; }
+  .bar.hl { background: var(--ink); height: 18px; }
+  .bar.weak { background: var(--weak-bg); }
+  .val { position: absolute; top: 50%; transform: translateY(-50%); font-size: 14.5px; font-variant-numeric: tabular-nums; padding-left: 6px; white-space: nowrap; }
+    .val.hl { font-weight: 700; }
+  .val.weak { color: var(--weak-ink); font-weight: 700; }
+  .axis { margin-right: 58px; display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-3); border-top: 1px solid #a8a29e; padding-top: 4px; margin-top: 4px; position: relative; }
+  .axis::before, .axis::after { content: ""; position: absolute; top: -1px; height: 5px; border-left: 1px solid #a8a29e; }
+  .axis::before { left: 50%; } .axis::after { left: 100%; }
+  .axis span:nth-child(2) { position: absolute; left: 50%; transform: translateX(-50%); }
+  .axis span:last-child { transform: translateX(50%); }
+  .axis span:first-child { transform: translateX(-20%); }
+  .cap { margin-top: 22px; font-size: 13.5px; color: var(--ink-2); line-height: 1.45; border-top: 1px solid var(--grid); padding-top: 12px; }
+  .cap b { color: var(--ink); font-weight: 600; }
+</style>
+</head>
+<body>
+<div id="frame">
+  <h1>Top-6 hit rate by ranker, higher is better</h1>
+  <p class="sub">How often the recipe a query was built from comes back on the app&rsquo;s first page.</p>
+  <div class="grid" id="grid"></div>
+  <p class="cap" id="cap"></p>
+</div>
+<script>
+  const R = DATA.results;
+  const RANKERS = [
+    ['brute_force', 'Brute force (substring)'],
+    ['tfidf', 'TF-IDF (the original app)'],
+    ['overlap', 'Ingredient overlap'],
+    ['embedding', 'Ingredient embeddings'],
+    ['learned', 'Learned ranker'],
+  ];
+  const STYLES = [
+    ['typed', 'typed', '4 ingredients as people type them: Hindi names, plural flips'],
+    ['exact', 'exact', '4 ingredients spelled as the dataset spells them'],
+    ['pantry', 'pantry', '3/4 of the recipe plus 10 unrelated common ingredients'],
+  ];
+  const get = (r, q) => R.find((x) => x.ranker === r && x.query === q);
+  const g = document.getElementById('grid');
+  let html = '<div></div>' + STYLES.map(([, h, d]) => `<div><div class="ph">${h}</div><div class="pd">${d}</div></div>`).join('');
+  for (const [key, label] of RANKERS) {
+    const hl = key === 'learned';
+    html += `<div class="name${hl ? ' hl' : ''}">${label}</div>`;
+    for (const [q] of STYLES) {
+      const v = get(key, q)['hit@6'] * 100;
+      const weak = v < 50;
+      const cls = hl ? 'hl' : weak ? 'weak' : '';
+      // Long bars carry their label inside, so the value never runs past the panel.
+      const inside = false;
+      const pos = `left:${v}%`;
+      html += `<div class="cell"><div class="track">
+        <div class="bar ${cls}" style="width:${v}%"></div>
+        <div class="val ${inside ? 'in' : ''} ${cls}" style="${pos};${inside && !hl ? 'color:#1f2937;font-weight:500' : ''}">${v.toFixed(1)}%</div>
+      </div></div>`;
+    }
+  }
+  html += '<div></div>' + STYLES.map(() => '<div class="axis"><span>0</span><span>50%</span><span>100%</span></div>').join('');
+  g.innerHTML = html;
+  const n = get('learned', 'typed').n.toLocaleString('en-US');
+  document.getElementById('cap').innerHTML =
+    `Known-item search: each query is built from a held-out recipe&rsquo;s own ingredients, and a hit means that recipe ranks in the top 6. ` +
+    `<b>${n} test queries per style</b>, recipes split by id (even ids tune and train, odd ids report). There are no human queries or judgements behind these numbers. ` +
+    `Ingredient embeddings collapse on pantry queries: averaging in ten extra ingredients drags the query vector towards generic recipes.`;
+  window.READY = true;
+</script>
+</body>
+</html>

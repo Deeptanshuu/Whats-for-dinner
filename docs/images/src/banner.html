@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RecipeSense banner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gelasio:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=block" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1f2937;        /* gray-800 */
+    --ink-2: #4b5563;      /* gray-600 */
+    --ink-3: #78716c;      /* stone-500 */
+    --slate: #475569;      /* slate-600 */
+    --chip-bg: #e5e7eb;    /* gray-200 */
+    --chip-border: #64748b;/* slate-500 */
+    --rule: #d6d3d1;       /* stone-300 */
+    --page: #fdfdfc;
+    --veg-bg: #86efac; --veg-ink: #166534;
+    --ms: #2563eb;         /* blue-600, the app's timing colour */
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #fff; font-family: Gelasio, Georgia, serif; color: var(--ink); padding: 20px; }
+  #frame {
+    position: relative; width: 1280px; height: 400px; overflow: hidden;
+    background: var(--page); border: 1px solid #e7e5e4;
+  }
+  /* The app's food-doodle background, large and faint. */
+  #frame::before {
+    content: ""; position: absolute; inset: 0;
+    background: url("../../../web/src/components/bg.svg") 0 0 / 760px auto repeat;
+    opacity: 0.05; pointer-events: none;
+  }
+  .left { position: absolute; left: 60px; top: 0; bottom: 0; width: 500px; display: flex; flex-direction: column; justify-content: center; }
+  .brand { display: flex; align-items: center; gap: 18px; }
+  .brand svg { width: 70px; height: 70px; flex: none; margin-top: -6px; }
+  .brand h1 { font-size: 64px; font-weight: 700; letter-spacing: -0.5px; line-height: 1; }
+  .tagline { margin-top: 26px; font-size: 24px; line-height: 1.32; color: var(--ink); max-width: 480px; }
+  .stats { margin-top: 18px; font-size: 18px; color: var(--ink-3); }
+  .stats span.sep { margin: 0 9px; color: #a8a29e; }
+
+  .vrule { position: absolute; left: 590px; top: 0; bottom: 0; border-left: 1px solid var(--rule); }
+
+  .right { position: absolute; left: 622px; right: 36px; top: 22px; bottom: 14px; display: flex; flex-direction: column; }
+  .head { display: flex; justify-content: space-between; align-items: baseline; }
+  .label { font-size: 12.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+  .timing { font-size: 13.5px; color: var(--ink-2); }
+  .timing b { color: var(--ms); font-weight: 700; font-size: 15px; }
+  .chips { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+  .chip { padding: 2px 13px 3px; border: 2px solid var(--chip-border); border-radius: 999px; background: var(--chip-bg); color: #374151; font-size: 15.5px; font-weight: 500; }
+  .readas { margin-top: 7px; font-size: 14px; color: var(--ink-2); display: flex; gap: 6px; flex-wrap: wrap; align-items: baseline; }
+  .readas .arrow { color: var(--ink-3); margin-right: 2px; }
+  .readas i { color: var(--ink); }
+  .readas .how { color: var(--ink-3); font-size: 12px; }
+
+  .rows { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .row { display: grid; grid-template-columns: 26px 1fr 96px 38px; align-items: center; gap: 12px;
+         background: #fff; border: 2px solid var(--slate); border-radius: 8px; padding: 4px 12px 4px 8px;
+         box-shadow: 0 4px 8px -2px rgba(168,162,158,0.55); }
+  .rank { width: 26px; height: 26px; border-radius: 999px; background: var(--ink); color: #fff; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .title { font-size: 15.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .meta { font-size: 12.5px; color: var(--ink-2); display: flex; gap: 8px; align-items: center; margin-top: 0; white-space: nowrap; }
+  .veg { padding: 0 8px; border-radius: 999px; background: var(--veg-bg); color: var(--veg-ink); font-weight: 600; font-size: 11.5px; line-height: 17px; }
+  .bar { height: 8px; background: #e7e5e4; border-radius: 999px; overflow: hidden; }
+  .bar > div { height: 100%; background: var(--ink); border-radius: 999px; }
+  .score { text-align: right; font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  .hrule { border-top: 1px solid var(--rule); margin: 12px 0 10px; }
+  .query { margin-top: 4px; font-size: 17px; font-style: italic; }
+  .srows { margin-top: 3px; display: flex; flex-direction: column; gap: 0; }
+  .srow { display: grid; grid-template-columns: 26px 1fr 96px 38px; gap: 12px; align-items: center; padding: 0 12px 0 8px; }
+  .srow .n { font-size: 14px; color: var(--ink-3); text-align: center; font-weight: 600; }
+  .srow .t { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .srow .bar > div { background: var(--slate); }
+  .srow .score { font-size: 15px; font-weight: 600; }
+  .note { margin-top: auto; padding-top: 4px; font-size: 11.5px; color: var(--ink-3); text-align: right; }
+</style>
+</head>
+<body>
+<div id="frame">
+  <div class="left">
+    <div class="brand">
+      <!-- a pot with steam, drawn in the doodle line style -->
+      <svg viewBox="0 0 64 64" fill="none" stroke="#1f2937" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M24 15c-3-3 3-5 0-9"/>
+        <path d="M32 15c-3-3 3-5 0-9"/>
+        <path d="M40 15c-3-3 3-5 0-9"/>
+        <path d="M13 29c3-6 10-9 19-9s16 3 19 9"/>
+        <circle cx="32" cy="18.5" r="1.6" fill="#1f2937"/>
+        <path d="M7 29h50"/>
+        <path d="M11 29v14c0 7 5 12 12 12h18c7 0 12-5 12-12V29"/>
+        <path d="M11 34H5.5M53 34h5.5"/>
+        <path d="M18 38v5c0 3 2 5 5 5"/>
+      </svg>
+      <h1>RecipeSense</h1>
+    </div>
+    <p class="tagline" id="tagline"></p>
+    <p class="stats" id="stats"></p>
+  </div>
+  <div class="vrule"></div>
+  <div class="right">
+    <div class="head"><span class="label">By ingredients</span><span class="timing" id="t1"></span></div>
+    <div class="chips" id="chips"></div>
+    <div class="readas" id="readas"></div>
+    <div class="rows" id="rows"></div>
+    <div class="hrule"></div>
+    <div class="head"><span class="label">Describe it</span><span class="timing" id="t2"></span></div>
+    <p class="query" id="query"></p>
+    <div class="srows" id="srows"></div>
+    <p class="note">score: learned ranker, scaled to the top result &middot; cosine for free text &middot; server time, median of 5 calls</p>
+  </div>
+</div>
+<script>
+  const ex = DATA.examples;
+  const ing = ex.ingredients_example, srch = ex.search_example, t = ex.api_timings;
+  const n = ex.catalogue.recipes.toLocaleString('en-US');
+  const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+
+  document.getElementById('tagline').innerHTML = `Type what is in your kitchen,<br>in any spelling. It ranks ${n} recipes.`;
+  document.getElementById('stats').innerHTML = [`${n} recipes`, 'learned ranker', 'free-text search'].join('<span class="sep">/</span>');
+
+  document.getElementById('t1').innerHTML = `learned ranker &middot; <b>${t.recommend_median_ms.toFixed(2)} ms</b>`;
+  document.getElementById('t2').innerHTML = `MiniLM &middot; <b>${t.search_median_ms.toFixed(2)} ms</b>`;
+  document.getElementById('chips').innerHTML = ing.typed.map((s) => `<span class="chip">${esc(s)}</span>`).join('');
+  document.getElementById('readas').innerHTML = '<span class="arrow">read as</span>' +
+    ing.resolved.map((r) => `<i>${esc(r.display.toLowerCase())}</i>`).join('<span>&middot;</span>');
+
+  const meta = (r) => [r.cuisine, r.course].filter(Boolean).join(' | ');
+  document.getElementById('rows').innerHTML = ing.top.slice(0, 3).map((r, i) => `
+    <div class="row">
+      <div class="rank">${i + 1}</div>
+      <div style="min-width:0">
+        <div class="title">${esc(r.title)}</div>
+        <div class="meta">${r.veg ? '<span class="veg">Veg</span>' : ''}<span>${esc(meta(r))}</span><span>&middot;</span><span>${r.matched.length} of ${ing.typed.length} typed found</span></div>
+      </div>
+      <div class="bar"><div style="width:${(r.score * 100).toFixed(1)}%"></div></div>
+      <div class="score">${r.score.toFixed(2)}</div>
+    </div>`).join('');
+
+  document.getElementById('query').textContent = `“${srch.query}”`;
+  document.getElementById('srows').innerHTML = srch.top.slice(0, 2).map((r, i) => `
+    <div class="srow">
+      <div class="n">${i + 1}</div>
+      <div class="t">${esc(r.title)}</div>
+      <div class="bar"><div style="width:${(r.score * 100).toFixed(1)}%"></div></div>
+      <div class="score">${r.score.toFixed(2)}</div>
+    </div>`).join('');
+  window.READY = true;
+</script>
+</body>
+</html>

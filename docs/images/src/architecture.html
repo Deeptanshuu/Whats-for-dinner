@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>RecipeSense architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gelasio:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=JetBrains+Mono:wght@400;500&display=block" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1f2937; --ink-2: #4b5563; --ink-3: #78716c; --slate: #475569; --chip-border: #64748b;
+    --chip-bg: #e5e7eb; --panel: #fafaf9; --panel-line: #e7e5e4; --offline: #f5f5f4;
+    --veg-bg: #86efac; --veg-ink: #166534; --ms: #2563eb;
+    --mono: "JetBrains Mono", "DejaVu Sans Mono", monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #fff; font-family: Gelasio, Georgia, serif; color: var(--ink); padding: 20px; }
+  #frame { position: relative; width: 1500px; height: 1575px; background: #fff; border: 1px solid #e7e5e4; overflow: hidden; }
+  .abs { position: absolute; }
+  h1 { font-size: 34px; font-weight: 700; }
+  .subtitle { font-family: var(--mono); font-size: 14px; color: var(--ink-2); }
+
+  .panel { position: absolute; background: var(--panel); border: 1px solid var(--panel-line); border-radius: 12px; }
+  .panel.offline { background: var(--offline); border: 1.5px dashed #a8a29e; }
+  .ptitle { position: absolute; font-size: 18px; font-weight: 700; }
+  .ptitle .ep { font-family: var(--mono); font-size: 12.5px; font-weight: 400; color: var(--ink-3); margin-left: 10px; }
+
+  .box { position: absolute; background: #fff; border: 2px solid var(--slate); border-radius: 8px;
+         box-shadow: 0 6px 12px -6px rgba(168,162,158,0.75); padding: 9px 12px 10px; text-align: center; }
+  .box .t { font-size: 16.5px; font-weight: 700; line-height: 1.25; }
+  .box .s { font-size: 13.5px; color: var(--ink-2); line-height: 1.35; margin-top: 3px; }
+  .box .m { font-family: var(--mono); font-size: 12px; color: var(--ink-3); line-height: 1.4; margin-top: 4px; }
+  .box.dark { background: var(--ink); border-color: var(--ink); color: #fff; }
+  .box.dark .s { color: #e5e7eb; } .box.dark .m { color: #d6d3d1; }
+  .box.left { text-align: left; }
+  .file { display: inline-flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 11.5px; color: var(--ink-2);
+          background: #f5f5f4; border: 1px dashed var(--chip-border); border-radius: 5px; padding: 1px 6px; margin-top: 6px; }
+  .box.dark .file { background: #374151; color: #e5e7eb; border-color: #9ca3af; }
+  .file svg { width: 11px; height: 13px; flex: none; }
+
+  .chip { display: inline-block; padding: 1px 11px 2px; border: 2px solid var(--chip-border); border-radius: 999px; background: var(--chip-bg); color: #374151; font-size: 15px; font-weight: 500; }
+  .label-sc { font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+
+  table.map { margin: 8px auto 0; border-collapse: collapse; font-size: 14px; }
+  table.map td { padding: 2.5px 8px; text-align: left; }
+  table.map td.typed { font-style: italic; text-align: right; }
+  table.map td.arrow { color: var(--ink-3); padding: 0 2px; }
+  table.map td.key { font-family: var(--mono); font-size: 12.5px; color: var(--ink); }
+  table.map td.via { font-size: 12.5px; color: var(--ink-3); }
+  .methods { display: flex; justify-content: center; gap: 8px; margin-top: 8px; }
+  .methods span { font-size: 12.5px; border: 1px solid #d6d3d1; border-radius: 999px; padding: 1px 9px; color: var(--ink-2); background: #fafaf9; }
+  .methods b { color: var(--ink); font-weight: 700; margin-right: 3px; }
+
+  .results { position: absolute; background: #fff; border: 2px solid var(--slate); border-radius: 8px; box-shadow: 0 6px 12px -6px rgba(168,162,158,0.75); padding: 10px 12px; }
+  .results .hd { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+  .results .hd .t { font-size: 16.5px; font-weight: 700; }
+  .results .hd .ms { font-size: 13px; color: var(--ink-2); }
+  .results .hd .ms b { color: var(--ms); font-size: 15px; }
+  .rrow { display: grid; grid-template-columns: 22px 1fr 40px; gap: 8px; align-items: start; padding: 5px 0; border-top: 1px solid #e7e5e4; }
+  .rrow .n { width: 20px; height: 20px; border-radius: 999px; background: var(--ink); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+  .rrow .ti { font-size: 14px; font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .rrow .me { font-size: 12px; color: var(--ink-2); margin-top: 2px; }
+  .rrow > div:nth-child(2) { min-width: 0; }
+  .rrow .sc { font-size: 14px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+  .rrow.compact .ti { font-weight: 500; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .veg { padding: 0 6px; border-radius: 999px; background: var(--veg-bg); color: var(--veg-ink); font-weight: 600; font-size: 11px; margin-right: 5px; }
+  .foot { font-size: 11.5px; color: var(--ink-3); margin-top: 4px; }
+
+  .query { position: absolute; background: #fff; border: 1px solid #d1d5db; border-radius: 8px; padding: 7px 12px; font-style: italic; font-size: 16px; text-align: center; }
+
+  .legend { position: absolute; display: grid; grid-template-columns: 30px 1fr; row-gap: 9px; column-gap: 10px; align-items: center; font-size: 14px; color: var(--ink-2); }
+  .sw { width: 30px; height: 18px; border-radius: 4px; }
+  .sw.req { background: #fff; border: 2px solid var(--slate); }
+  .sw.model { background: var(--ink); }
+  .sw.off { background: var(--offline); border: 1.5px dashed #a8a29e; }
+  .sw.chipsw { background: var(--chip-bg); border: 2px solid var(--chip-border); border-radius: 999px; }
+
+  svg#wires { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+  .wlabel { position: absolute; font-family: var(--mono); font-size: 12.5px; color: var(--ink-2); background: var(--panel); padding: 0 4px; white-space: nowrap; transform: translate(-50%, -50%); }
+  .wlabel.off { background: var(--offline); }
+  .wlabel.l { transform: translate(0, -50%); }
+</style>
+</head>
+<body>
+<div id="frame">
+  <h1 class="abs" style="left:40px; top:30px">RecipeSense, one request</h1>
+  <p class="abs subtitle" id="facts" style="left:42px; top:84px"></p>
+
+  <div class="legend" style="left:1210px; top:30px">
+    <div class="sw req"></div><div>runs on every request</div>
+    <div class="sw model"></div><div>learned model</div>
+    <div class="sw off"></div><div>built offline</div>
+    <div><span class="file" style="margin:0;padding:1px 3px"><svg viewBox="0 0 11 13"><path d="M1 1h6l3 3v8H1z" fill="none" stroke="currentColor"/></svg></span></div><div>file in models/, loaded at start-up</div>
+    <div class="sw chipsw"></div><div>real example, from the running code</div>
+  </div>
+
+  <!-- panels -->
+  <div class="panel" style="left:40px; top:180px; width:890px; height:1010px"></div>
+  <div class="ptitle" style="left:62px; top:194px">Search by ingredients<span class="ep">POST /api/recommend</span></div>
+  <div class="panel" style="left:960px; top:180px; width:500px; height:520px"></div>
+  <div class="ptitle" style="left:982px; top:194px">Describe it<span class="ep">POST /api/search</span></div>
+  <div class="panel" style="left:960px; top:725px; width:500px; height:465px"></div>
+  <div class="ptitle" style="left:982px; top:739px">More like this<span class="ep">GET /api/recipe/&lt;id&gt;/similar</span></div>
+  <div class="panel offline" style="left:40px; top:1220px; width:1420px; height:325px"></div>
+  <div class="ptitle" style="left:62px; top:1234px">Offline, before the API starts<span class="ep">python -m recsys.train, about 30 s; the MiniLM index is built once and cached</span></div>
+
+  <!-- ingredient flow -->
+  <div class="abs" id="typed" style="left:60px; width:850px; top:238px; text-align:center"></div>
+
+  <div class="box" id="resolve" style="left:130px; width:700px; top:290px">
+    <div class="t">Resolve to canonical names</div>
+    <div class="m">IngredientIndex.resolve, in this order, first hit wins</div>
+    <div class="methods"><span><b>1</b>exact name or one of <span id="naliases" style="all:unset"></span> aliases</span><span><b>2</b>spelling and plural folding</span><span><b>3</b>character n-gram fuzzy, &ge; 0.70</span></div>
+    <table class="map" id="map"></table>
+  </div>
+
+  <div class="box" id="r1" style="left:112px; width:225px; top:580px"><div class="t">TF-IDF</div><div class="s">binary, over raw ingredient words; the original app</div></div>
+  <div class="box" id="r2" style="left:382px; width:225px; top:580px"><div class="t">Ingredient overlap</div><div class="s">share of the query&rsquo;s IDF the recipe covers</div></div>
+  <div class="box" id="r3" style="left:652px; width:225px; top:580px"><div class="t">Ingredient embedding</div><div class="s">cosine of IDF-weighted 64-dim vectors</div></div>
+
+  <div class="box" id="union" style="left:170px; width:300px; top:722px"><div class="t">Union of candidates</div><div class="s" id="ncands"></div></div>
+
+  <div class="box" id="feats" style="left:85px; width:470px; top:832px">
+    <div class="t">18 features per candidate</div>
+    <div class="s">the three scores and their gaps to the best candidate; how much of the query and of the recipe is covered (count, IDF, vectors); recipe length</div>
+    <div class="m">most gain: overlap_gap, soft_gap, tfidf_gap, recipe_cov</div>
+  </div>
+
+  <div class="box dark" id="lgbm" style="left:140px; width:360px; top:985px">
+    <div class="t">LightGBM lambdarank</div>
+    <div class="s">99 trees, scores every candidate</div>
+    <div class="file"><svg viewBox="0 0 11 13"><path d="M1 1h6l3 3v8H1z" fill="none" stroke="currentColor"/></svg>models/ranker.txt</div>
+  </div>
+
+  <div class="box" id="boost" style="left:95px; width:450px; top:1100px">
+    <div class="t">Filters and boosts</div>
+    <div class="s">score scaled to 0..1, then cuisine +0.2, course +0.3, likes +0.3; Veg filter; repeated titles dropped</div>
+  </div>
+
+  <div class="results" id="res1" style="left:585px; width:325px; top:722px"></div>
+
+  <!-- describe it -->
+  <div class="query" id="q" style="left:1000px; width:420px; top:236px"></div>
+  <div class="box" id="enc" style="left:1050px; width:320px; top:300px">
+    <div class="t">MiniLM encoder</div>
+    <div class="m">all-MiniLM-L6-v2, 384 dims, L2-normalised</div>
+  </div>
+  <div class="box" id="cos" style="left:1010px; width:400px; top:405px">
+    <div class="t">Cosine against 6,521 &times; 384 text matrix</div>
+    <div class="s">rows: title, description, cuisine, course, ingredients</div>
+    <div class="file"><svg viewBox="0 0 11 13"><path d="M1 1h6l3 3v8H1z" fill="none" stroke="currentColor"/></svg>models/text_embeddings.npy</div>
+  </div>
+  <div class="results" id="res2" style="left:990px; width:440px; top:532px"></div>
+
+  <!-- more like this -->
+  <div class="abs" id="src" style="left:980px; width:460px; top:770px; text-align:center"></div>
+  <div class="box" id="iv" style="left:990px; width:205px; top:820px"><div class="t">Ingredient vector</div><div class="s">64 dims, IDF-weighted</div></div>
+  <div class="box" id="tv" style="left:1225px; width:205px; top:820px"><div class="t">Text vector</div><div class="s">384 dims, MiniLM</div></div>
+  <div class="box" id="join" style="left:1030px; width:360px; top:922px">
+    <div class="t">Join, half weight each: 448 dims</div>
+    <div class="s">cosine against all 6,521 recipes; the same matrix builds the likes taste vector</div>
+  </div>
+  <div class="results" id="res3" style="left:990px; width:440px; top:1030px"></div>
+
+  <!-- offline -->
+  <div class="box" id="csv" style="left:70px; width:190px; top:1342px"><div class="t" style="font-family:var(--mono);font-size:14.5px">data/recipes.csv</div><div class="s">7,540 rows</div></div>
+  <div class="box" id="clean" style="left:305px; width:270px; top:1306px">
+    <div class="t">Cleaning</div>
+    <div class="m">recsys/data.py</div>
+    <div class="s">drops Hindi copies, plain repeats and Hindi-only rows; canonical ingredients, aliases, veg flag</div>
+    <div class="s" style="color:var(--ink);font-weight:600" id="cleaned"></div>
+  </div>
+  <div class="box" id="o1" style="left:640px; width:530px; top:1290px"><div class="t">Skip-gram ingredient vectors</div><div class="m">Word2Vec, 64 dims, 40 epochs, window = the whole recipe</div></div>
+  <div class="box" id="o2" style="left:640px; width:285px; top:1374px"><div class="t">Known-item tune queries</div><div class="s">even ids only: 7,599 train, 1,880 held out</div></div>
+  <div class="box dark" id="o3" style="left:950px; width:220px; top:1374px"><div class="t">Ranker training</div><div class="s">lambdarank, stops at 99 trees</div></div>
+  <div class="box" id="o4" style="left:640px; width:530px; top:1458px"><div class="t">MiniLM encodes every recipe&rsquo;s text</div><div class="m">6,521 rows, cached until the text or the model changes</div></div>
+  <div class="box left" id="a1" style="left:1210px; width:225px; top:1290px"><div class="t" style="font-family:var(--mono);font-size:13px">ingredient_vectors.npz</div><div class="s">182 KB &middot; 1,409 &times; 64, float16</div></div>
+  <div class="box left" id="a2" style="left:1210px; width:225px; top:1374px"><div class="t" style="font-family:var(--mono);font-size:13px">ranker.txt</div><div class="s">351 KB &middot; LightGBM model</div></div>
+  <div class="box left" id="a3" style="left:1210px; width:225px; top:1458px"><div class="t" style="font-family:var(--mono);font-size:13px">text_embeddings.npy</div><div class="s">5.0 MB &middot; 6,521 &times; 384, float16</div></div>
+
+  <svg id="wires">
+    <defs>
+      <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0 0 L10 5 L0 10 z" fill="#374151"/>
+      </marker>
+    </defs>
+  </svg>
+</div>
+<script>
+  const ex = DATA.examples;
+  const ing = ex.ingredients_example, srch = ex.search_example, sim = ex.similar_example, t = ex.api_timings;
+  const fmt = (x) => x.toLocaleString('en-US');
+  const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const $ = (id) => document.getElementById(id);
+  const sh = ex.shapes;
+
+  $('facts').innerHTML = [
+    `${fmt(ex.catalogue.recipes)} recipes`, `${fmt(ex.catalogue.ingredients)} canonical ingredients`,
+    `${sh.ingredient_vectors[1]}-dim ingredient vectors`, `${sh.text_matrix[1]}-dim text vectors`,
+    `${ing.n_features} features`, '50 candidates per cheap ranker',
+  ].join(' &middot; ');
+  $('naliases').textContent = fmt(ex.catalogue.aliases);
+  $('typed').innerHTML = '<span id="chipsrow" style="display:inline-block"><span class="label-sc" style="margin-right:10px">typed</span>' +
+    ing.typed.map((s) => `<span class="chip">${esc(s)}</span>`).join(' ') + '</span>';
+  const via = (v) => v.replace('spelling and plural folding', 'spelling fold').replace('n-gram fuzzy', 'fuzzy, cosine');
+  $('map').innerHTML = ing.resolved.map((r) =>
+    `<tr><td class="typed">${esc(r.typed)}</td><td class="arrow">&rarr;</td><td class="key">${esc(r.canonical)}</td><td class="via">${esc(via(r.via))}</td></tr>`).join('');
+  $('ncands').textContent = `${ing.candidates} recipes for this query, at most 150`;
+  $('cleaned').textContent = `${fmt(ex.catalogue.recipes)} recipes, ${fmt(ex.catalogue.ingredients)} ingredients`;
+
+  const meta = (r) => [r.cuisine, r.course].filter(Boolean).join(' | ');
+  $('res1').innerHTML = `<div class="hd"><span class="t">Top results</span><span class="ms"><b>${t.recommend_median_ms.toFixed(2)} ms</b></span></div>` +
+    ing.top.slice(0, 3).map((r, i) => `<div class="rrow"><div class="n">${i + 1}</div><div class="ti">${esc(r.title)}</div>
+      <div class="sc">${r.score.toFixed(2)}</div>
+      <div class="me" style="grid-column: 2 / 4; margin-top: -4px">${r.veg ? '<span class="veg">Veg</span>' : ''}${esc(r.cuisine)} &middot; ${r.matched.length} of ${ing.typed.length} typed found</div></div>`).join('') +
+    `<div class="foot">score scaled to the top result &middot; server time, median of 5</div>`;
+
+  $('q').textContent = `“${srch.query}”`;
+  const compact = (rows) => rows.slice(0, 3).map((r, i) => `<div class="rrow compact"><div class="n">${i + 1}</div><div class="ti">${esc(r.title)}</div><div class="sc">${r.score.toFixed(2)}</div></div>`).join('');
+  $('res2').innerHTML = `<div class="hd"><span class="t">Results</span><span class="ms">cosine &middot; <b>${t.search_median_ms.toFixed(2)} ms</b></span></div>` + compact(srch.top);
+  const simMed = [...t.similar_2121_ms].sort((a, b) => a - b)[1];
+  $('src').innerHTML = `<span class="label-sc" style="margin-right:8px">for</span><span class="chip" style="font-size:14px">${esc(sim.source)}</span>`;
+  $('res3').innerHTML = `<div class="hd"><span class="t">Nearest recipes</span><span class="ms">cosine &middot; <b>${simMed.toFixed(2)} ms</b></span></div>` + compact(sim.top);
+
+  // ---- wires, measured once the web fonts have loaded ----
+  document.fonts.ready.then(() => {
+  const frame = $('frame').getBoundingClientRect();
+  const R = (id) => { const b = $(id).getBoundingClientRect(); return { l: b.left - frame.left, r: b.right - frame.left, t: b.top - frame.top, b: b.bottom - frame.top, cx: (b.left + b.right) / 2 - frame.left, cy: (b.top + b.bottom) / 2 - frame.top }; };
+  const svg = $('wires');
+  const NS = 'http://www.w3.org/2000/svg';
+  function wire(pts, { head = true, dash = false } = {}) {
+    const p = document.createElementNS(NS, 'path');
+    p.setAttribute('d', pts.map((q, i) => `${i ? 'L' : 'M'}${q[0]} ${q[1]}`).join(' '));
+    p.setAttribute('fill', 'none'); p.setAttribute('stroke', '#374151'); p.setAttribute('stroke-width', '1.6');
+    if (dash) p.setAttribute('stroke-dasharray', '5 4');
+    if (head) p.setAttribute('marker-end', 'url(#ah)');
+    svg.appendChild(p);
+  }
+  function label(x, y, text, cls = '') {
+    const d = document.createElement('div'); d.className = `wlabel ${cls}`; d.style.left = `${x}px`; d.style.top = `${y}px`; d.innerHTML = text; $('frame').appendChild(d);
+  }
+  const G = 2; // gap so arrow heads touch the border, not the text
+  // ingredients
+  const typed = R('typed'), res = R('resolve');
+  wire([[res.cx, typed.b + 4], [res.cx, res.t - G]]);
+  const r1 = R('r1'), r2 = R('r2'), r3 = R('r3');
+  const busY = res.b + 30;
+  wire([[res.cx, res.b], [res.cx, busY]], { head: false });
+  wire([[Math.min(res.cx, r2.cx), busY], [r3.cx, busY]], { head: false });
+  for (const r of [r2, r3]) wire([[r.cx, busY], [r.cx, r.t - G]]);
+  // TF-IDF reads the raw typed strings, not the resolved names.
+  const cr = R('chipsrow'), gx = 74;
+  wire([[cr.l - 8, cr.cy], [gx, cr.cy], [gx, r1.cy], [r1.l - G, r1.cy]]);
+  label((cr.l - 8 + gx) / 2, cr.cy - 13, 'as typed');
+  label(res.cx + 8, busY - 14, 'canonical ingredient ids', 'l');
+  const un = R('union');
+  const bus2 = r1.b + 32;
+  for (const r of [r1, r2, r3]) wire([[r.cx, r.b], [r.cx, bus2]], { head: false });
+  wire([[r1.cx, bus2], [r3.cx, bus2]], { head: false });
+  wire([[un.cx, bus2], [un.cx, un.t - G]]);
+  for (const r of [r1, r2, r3]) label(r.cx + 8, r.b + 15, 'top 50', 'l');
+  const fe = R('feats'), lg = R('lgbm'), bo = R('boost'), rs = R('res1');
+  wire([[un.cx, un.b], [fe.cx, fe.t - G]]);
+  wire([[fe.cx, fe.b], [lg.cx, lg.t - G]]);
+  wire([[lg.cx, lg.b], [bo.cx, bo.t - G]]);
+  label(un.cx + 8, (un.b + fe.t) / 2, `[${ing.candidates}, ${ing.n_features}]`, 'l');
+  label(lg.cx + 8, (lg.b + bo.t) / 2, `one score per candidate`, 'l');
+  wire([[bo.r, bo.cy], [rs.cx, bo.cy], [rs.cx, rs.b + G]]);
+  // describe it
+  const q = R('q'), en = R('enc'), co = R('cos'), r2b = R('res2');
+  wire([[q.cx, q.b], [en.cx, en.t - G]]);
+  wire([[en.cx, en.b], [co.cx, co.t - G]]);
+  label(en.cx + 8, (en.b + co.t) / 2, 'query vector [384]', 'l');
+  wire([[co.cx, co.b], [r2b.cx, r2b.t - G]]);
+  // more like this
+  const sr = R('src'), iv = R('iv'), tv = R('tv'), jo = R('join'), r3b = R('res3');
+  const sBus = sr.b + 12;
+  wire([[sr.cx, sr.b], [sr.cx, sBus]], { head: false });
+  wire([[iv.cx, sBus], [tv.cx, sBus]], { head: false });
+  wire([[iv.cx, sBus], [iv.cx, iv.t - G]]);
+  wire([[tv.cx, sBus], [tv.cx, tv.t - G]]);
+  const jBus = iv.b + 20;
+  wire([[iv.cx, iv.b], [iv.cx, jBus], [tv.cx, jBus]], { head: false });
+  wire([[tv.cx, tv.b], [tv.cx, jBus]], { head: false });
+  wire([[jo.cx, jBus], [jo.cx, jo.t - G]]);
+  wire([[jo.cx, jo.b], [r3b.cx, r3b.t - G]]);
+  // offline
+  const cs = R('csv'), cl = R('clean'), o1 = R('o1'), o2 = R('o2'), o3 = R('o3'), o4 = R('o4');
+  const a1 = R('a1'), a2 = R('a2'), a3 = R('a3');
+  wire([[cs.r, cs.cy], [cl.l - G, cs.cy]]);
+  const ox = cl.r + 32;
+  wire([[cl.r, cs.cy], [ox, cs.cy]], { head: false });
+  wire([[ox, o1.cy], [ox, o4.cy]], { head: false });
+  for (const o of [o1, o2, o4]) wire([[ox, o.cy], [o.l - G, o.cy]]);
+  wire([[o2.r, o2.cy], [o3.l - G, o2.cy]]);
+  wire([[o3.cx, o1.b], [o3.cx, o3.t - G]]);
+  wire([[o1.r, o1.cy], [a1.l - G, o1.cy]]);
+  wire([[o3.r, o3.cy], [a2.l - G, o3.cy]]);
+  wire([[o4.r, o4.cy], [a3.l - G, o4.cy]]);
+  label((a1.l + a1.r) / 2, a1.t - 14, 'models/', 'off');
+  window.READY = true;
+  });
+</script>
+</body>
+</html>
