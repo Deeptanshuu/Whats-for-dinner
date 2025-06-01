@@ -1,19 +1,19 @@
 <div align="center">
 
-<img src="docs/images/banner.png" alt="RecipeSense banner. The input haldi, paneer, palak, green chilly, tomatoe is read as turmeric powder, paneer, spinach leaves, green chillies and tomato, and the learned ranker returns Palak Paneer first in 2.43 ms; the free-text query 'something creamy and spicy with spinach' returns Creamed Spinach in 12.33 ms" width="100%">
+<img src="docs/images/banner.png" alt="RecipeSense. Typed ingredients haldi, paneer, palak, green chilly and tomatoe become turmeric powder, paneer, spinach leaf, green chilli and tomato, and the top results are Palak Paneer, Palak Paneer Bhurji and Methi Chaman, in 2.43 ms" width="100%">
 
 <br>
 <br>
 
 **Type what is in your kitchen, or describe what you feel like eating. RecipeSense ranks 6,521 recipes in about 3 ms.**
 
-**[Results](#results)** &nbsp;&nbsp;|&nbsp;&nbsp; **[How it works](#how-it-works)** &nbsp;&nbsp;|&nbsp;&nbsp; **[API](api/README.md)** &nbsp;&nbsp;|&nbsp;&nbsp; **[Plan and audit](docs/ML_PLAN.md)**
+**[Results](#how-good-is-it)** &nbsp;&nbsp;|&nbsp;&nbsp; **[Under the hood](#under-the-hood)** &nbsp;&nbsp;|&nbsp;&nbsp; **[API](api/README.md)** &nbsp;&nbsp;|&nbsp;&nbsp; **[Plan and audit](docs/ML_PLAN.md)**
 
 </div>
 
 ---
 
-## What you get
+## What it does
 
 **Search by ingredients, typed the way people type them.** "haldi", "turmeric powders" and
 "Turmeric powder (Haldi)" are one ingredient. Typed names are resolved to canonical ones, three
@@ -37,7 +37,7 @@ from the recipe source, which refused the machine these screenshots were taken o
 They build a taste vector that re-ranks the results. Filters for vegetarian, cuisine and course
 use grouped labels, so "Indian" also covers Kerala, Punjabi, Bengali and the other regional labels.
 
-## Use it from Python
+## Try it in Python
 
 ```python
 from recsys.service import Recommender
@@ -79,7 +79,7 @@ for r in rec.similar(210, limit=3):   # 210 is Paneer And Spinach Puff
 | `liked` | A list of recipe ids. They shape the ranking and are left out of the results |
 | Ids | The row number in `data/recipes.csv` |
 
-## Results
+## How good is it
 
 There are no ratings or click logs, so the evaluation is known-item search. A query is built from
 a held-out recipe's own ingredients, and a ranker scores well if that recipe comes back near the
@@ -102,7 +102,7 @@ Share of queries where the source recipe is in the top 6, the app's first page:
 | exact | Four ingredients spelled as the dataset spells them |
 | pantry | Three quarters of the recipe plus ten unrelated common ingredients |
 
-<img src="docs/images/results.png" alt="Top-6 hit rate on 3,120 held-out queries per style. The learned ranker scores 95.3% typed, 97.4% exact and 99.0% pantry, against 71.9%, 86.6% and 83.8% for the original TF-IDF; ingredient embeddings alone fall to 37.5% on pantry queries" width="100%">
+<img src="docs/images/results.png" alt="How often the recipe lands on page one. Top-6 hit rate on 3,120 known-item queries per style: the learned ranker scores 95.3% typed, 97.4% exact and 99.0% pantry, against 71.9%, 86.6% and 83.8% for the old TF-IDF; ingredient embeddings fall to 37.5% on pantry queries" width="100%">
 
 Top-1 for the learned ranker is 80.5% / 85.5% / 95.3%, against 45.1% / 61.9% / 66.8% for TF-IDF.
 
@@ -113,7 +113,7 @@ Top-1 for the learned ranker is 80.5% / 85.5% / 95.3%, against 45.1% / 61.9% / 6
 | TF-IDF over recipe text | 91.6% | **81.5%** |
 | MiniLM | **95.3%** | 31.0% |
 
-<img src="docs/images/results_search.png" alt="Free-text search, share of queries with the source recipe in the top 6. MiniLM wins on title queries, 95.3% against 91.6% for TF-IDF, and TF-IDF wins on ingredient-sentence queries, 81.5% against 31.0%" width="100%">
+<img src="docs/images/results_search.png" alt="Free-text search, top-6 hit rate. MiniLM wins title queries, 95.3% against 91.6% for TF-IDF; TF-IDF wins ingredient-sentence queries, 81.5% against 31.0%" width="100%">
 
 Most of the gain is data cleaning: resolving aliases and plurals takes typed queries from 72% to
 93% before any model is trained. The learned ranker adds the rest, mostly on pantry queries, where
@@ -153,7 +153,7 @@ cd web && npm install && npm run dev
 
 It runs on CPU. Set `VITE_API_URL` in `web/.env` if the API is somewhere else.
 
-## Train and evaluate
+## Retrain and re-measure
 
 | Task | Command |
 |---|---|
@@ -167,9 +167,9 @@ It runs on CPU. Set `VITE_API_URL` in `web/.env` if the API is somewhere else.
 Training uses only queries from the tune half, with part of it held out by recipe for early
 stopping. No test query is used for training or tuning.
 
-## How it works
+## Under the hood
 
-<img src="docs/images/architecture.png" alt="One RecipeSense request. Typed ingredients resolve to canonical names by alias, spelling fold or fuzzy match; TF-IDF, ingredient overlap and ingredient embedding each nominate 50 recipes; LightGBM lambdarank with 99 trees re-orders the 98 candidates on 18 features, then filters and boosts apply. Free text goes through MiniLM against a 6,521 by 384 matrix. More like this joins 64-dim ingredient vectors with 384-dim text vectors. Offline, 7,540 raw rows are cleaned to 6,521 recipes and the three model files are built" width="100%">
+<img src="docs/images/architecture.png" alt="How RecipeSense cooks a recommendation. Ingredients: 7,540 rows cleaned to 6,521 recipes, 1,409 canonical ingredients, 64-dim ingredient vectors, a 99-tree LightGBM ranker and 6,521 by 384 text embeddings. Method: read what was typed, three quick rankers pick 50 each, pool to 98 recipes, score each on 18 features with lambdarank, filter and boost, serve the top results in 2.43 ms. Describe it uses MiniLM in 12.33 ms; More like this joins ingredient and text vectors into 448 dims" width="100%">
 
 Typed ingredients are resolved to canonical names, with a character n-gram fallback for
 misspellings. The overlap and embedding rankers work on those names, TF-IDF on the text as typed,

@@ -7,73 +7,76 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gelasio:ital,wght@0,400;0,500;0,600;0,700;1,400&display=block" rel="stylesheet">
 <style>
-  :root { --ink: #1f2937; --ink-2: #4b5563; --ink-3: #78716c; --base: #d6d3d1; --grid: #e7e5e4;
-          --weak-bg: #fca5a5; --weak-ink: #991b1b; }
+  /* Colours are the app's Tailwind classes. */
+  :root {
+    --ink: #111827; --ink-2: #4b5563;
+    --slate-8: #1e293b; --slate-6: #475569; --slate-5: #64748b;
+    --chip: #e5e7eb; --chip-ink: #374151;
+    --picked: #44403c;                    /* stone-700, a selected chip */
+    --bar: #d1d5db; --track: #f3f4f6;
+    --shadow: 0 20px 25px -5px rgba(168,162,158,.9), 0 8px 10px -6px rgba(168,162,158,.9);
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: #fff; font-family: Gelasio, Georgia, serif; color: var(--ink); padding: 20px; }
-  #frame { width: 836px; background: #fff; padding: 30px 30px 22px; }
-  h1 { font-size: 25px; font-weight: 700; }
-  .sub { margin-top: 6px; font-size: 15px; color: var(--ink-2); }
-  .grid { margin-top: 26px; display: grid; grid-template-columns: 150px repeat(2, 1fr); column-gap: 40px; column-gap: 22px; }
-  .ph { font-size: 17px; font-weight: 700; padding-bottom: 2px; }
-  .pd { font-size: 13px; color: var(--ink-3); line-height: 1.35; padding-bottom: 12px; min-height: 66px; }
-  .name { font-size: 15.5px; text-align: right; height: 52px; display: flex; align-items: center; justify-content: flex-end; color: var(--ink); }
-  .name.hl { font-weight: 700; }
-  .cell { height: 52px; display: flex; align-items: center; position: relative; }
-  .track { position: relative; flex: 1; height: 100%; margin-right: 58px; }
-  .bar { position: absolute; left: 0; top: 50%; height: 16px; transform: translateY(-50%); background: var(--base); border-radius: 0 3px 3px 0; }
-  .bar.hl { background: var(--ink); height: 18px; }
-  .bar.weak { background: var(--weak-bg); }
-  .val { position: absolute; top: 50%; transform: translateY(-50%); font-size: 14.5px; font-variant-numeric: tabular-nums; padding-left: 6px; white-space: nowrap; }
-    .val.hl { font-weight: 700; }
-  .val.weak { color: var(--weak-ink); font-weight: 700; }
-  .axis { margin-right: 58px; display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-3); border-top: 1px solid #a8a29e; padding-top: 4px; margin-top: 4px; position: relative; }
-  .axis::before, .axis::after { content: ""; position: absolute; top: -1px; height: 5px; border-left: 1px solid #a8a29e; }
-  .axis::before { left: 50%; } .axis::after { left: 100%; }
-  .axis span:nth-child(2) { position: absolute; left: 50%; transform: translateX(-50%); }
-  .axis span:last-child { transform: translateX(50%); }
-  .axis span:first-child { transform: translateX(-20%); }
-  .cap { margin-top: 22px; font-size: 13.5px; color: var(--ink-2); line-height: 1.45; border-top: 1px solid var(--grid); padding-top: 12px; }
-  .cap b { color: var(--ink); font-weight: 600; }
-  .win { position: absolute; top: 50%; transform: translateY(-50%); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; white-space: nowrap; }
+  #frame {
+    width: 836px; padding: 24px 24px 28px;
+    background: #fefefe url("../../../web/src/components/bg.svg") -40px -30px / 400px 400px repeat;
+    display: flex; flex-direction: column; gap: 18px;
+  }
+  .card { background: #fff; border: 2px solid var(--slate-6); border-radius: 8px; box-shadow: var(--shadow); }
+  .title { border-color: var(--slate-8); padding: 16px 22px 15px; }
+  .title h1 { font-size: 34px; font-weight: 700; line-height: 1.12; }
+  .title p { margin-top: 6px; font-size: 16px; color: var(--ink-2); }
+  .styles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .style { padding: 14px 16px 18px; display: flex; flex-direction: column; align-items: flex-start; }
+  .bars { margin-top: auto; width: 100%; padding-top: 2px; }
+  .pill { display: inline-block; border: 2px solid var(--slate-5); background: var(--chip); color: var(--chip-ink); border-radius: 999px; font-size: 17px; font-weight: 600; padding: 1px 14px 3px; }
+  .desc { margin-top: 8px; font-size: 14px; line-height: 1.35; color: var(--ink-2); min-height: 38px; }
+  .q { margin-top: 8px; display: inline-block; background: var(--chip); color: #1f2937; border-radius: 14px; font-size: 14px; line-height: 1.35; padding: 5px 12px 6px; font-style: italic; }
+  .row { margin-top: 14px; }
+  .lab { display: flex; justify-content: space-between; align-items: baseline; font-size: 15px; color: var(--chip-ink); }
+  .lab b { font-size: 18px; font-weight: 700; color: var(--ink); }
+  .track { margin-top: 4px; height: 22px; border-radius: 999px; background: var(--track); }
+  .bar { height: 100%; border-radius: 999px; background: var(--bar); border: 2px solid var(--slate-5); }
+  .row.win .lab { color: var(--ink); font-weight: 700; }
+  .row.win .lab b { color: var(--picked); }
+  .row.win .bar { background: var(--picked); border-color: var(--picked); }
+  .cap { background: #f3f4f6; border-color: #18181b; box-shadow: none; padding: 12px 16px 13px; font-size: 14px; line-height: 1.42; color: var(--chip-ink); }
+  .cap b { color: var(--ink); }
 </style>
 </head>
 <body>
 <div id="frame">
-  <h1>Free-text search: each searcher wins one</h1>
-  <p class="sub">Top-6 hit rate. MiniLM finds a dish from its name; TF-IDF finds it from a list of ingredients.</p>
-  <div class="grid" id="grid"></div>
-  <p class="cap" id="cap"></p>
+  <div class="card title">
+    <h1>Free-text search: each searcher wins one</h1>
+    <p>Top-6 hit rate. MiniLM finds a dish from its name; TF-IDF finds it from a list of ingredients.</p>
+  </div>
+  <div class="styles" id="styles"></div>
+  <div class="card cap" id="cap"></div>
 </div>
 <script>
   const rows = DATA.examples.search_eval.rows;
+  const EXQ = DATA.examples.search_eval.example_queries;
   const SEARCHERS = [['minilm', 'MiniLM'], ['tfidf_text', 'TF-IDF over text']];
   const STYLES = [
-    ['title', 'title queries', 'the dish name, searched against recipe text with the title taken out', 'title'],
-    ['paraphrase', 'ingredient-sentence queries', 'cuisine, course and three or four of its ingredients', 'paraphrase'],
+    ['title', 'Title queries', 'the dish name, searched against recipe text with the title taken out'],
+    ['paraphrase', 'Ingredient-sentence queries', 'cuisine, course and three or four of its ingredients'],
   ];
-  const EXQ = DATA.examples.search_eval.example_queries;
   const get = (s, q) => rows.find((x) => x.searcher === s && x.query === q);
-  let html = '<div></div>' + STYLES.map(([, h, d, k]) => `<div><div class="ph">${h}</div><div class="pd">${d}<br><i style="color:#4b5563">&ldquo;${EXQ[k]}&rdquo;</i></div></div>`).join('');
-  for (const [key, label] of SEARCHERS) {
-    html += `<div class="name">${label}</div>`;
-    for (const [q] of STYLES) {
-      const v = get(key, q)['hit@6'] * 100;
-      const best = Math.max(...SEARCHERS.map(([k]) => get(k, q)['hit@6'] * 100));
-      const win = v === best;
-      html += `<div class="cell"><div class="track">
-        <div class="bar ${win ? 'hl' : ''}" style="width:${v}%"></div>
-        <div class="val ${win ? 'hl' : ''}" style="left:${v}%">${v.toFixed(1)}%</div>
-      </div></div>`;
-    }
-  }
-  html += '<div></div>' + STYLES.map(() => '<div class="axis"><span>0</span><span>50%</span><span>100%</span></div>').join('');
-  document.getElementById('grid').innerHTML = html;
+  document.getElementById('styles').innerHTML = STYLES.map(([q, name, desc]) => {
+    const best = Math.max(...SEARCHERS.map(([k]) => get(k, q)['hit@6']));
+    const bars = SEARCHERS.map(([k, label]) => {
+      const v = get(k, q)['hit@6'];
+      return `<div class="row ${v === best ? 'win' : ''}"><div class="lab"><span>${label}</span><b>${(v * 100).toFixed(1)}%</b></div>
+        <div class="track"><div class="bar" style="width:${v * 100}%"></div></div></div>`;
+    }).join('');
+    return `<div class="card style"><span class="pill">${name}</span><p class="desc">${desc}</p>
+      <span class="q">&ldquo;${EXQ[q]}&rdquo;</span><div class="bars">${bars}</div></div>`;
+  }).join('');
   const n = (q) => get('minilm', q).n.toLocaleString('en-US');
   document.getElementById('cap').innerHTML =
     `Known-item search on the test split: <b>${n('title')} title queries and ${n('paraphrase')} ingredient-sentence queries</b>, each built from one held-out recipe; a hit means that recipe ranks in the top 6. ` +
-    `MiniLM is <code style="font-family:inherit">all-MiniLM-L6-v2</code>; within a style both searchers index the same text. ` +
-    `So in the app, ingredient lists go to the learned ranker and free text goes to MiniLM.`;
+    `MiniLM is all-MiniLM-L6-v2, and both searchers index the same text. So in the app, ingredient lists go to the learned ranker and free text goes to MiniLM.`;
   window.READY = true;
 </script>
 </body>
