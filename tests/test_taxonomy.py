@@ -46,7 +46,7 @@ def test_indian_parent_reaches_every_regional_recipe(recipes):
     regional = counts["North Indian"] + counts["South Indian"] + counts["West Indian"] + \
         counts["East & North-East Indian"]
     assert counts["Indian"] >= regional
-    assert counts["Indian"] > 4000  # the old substring match reached about 2,500
+    assert counts["Indian"] > 4000  # a substring match reaches about 2,500
 
 
 def test_course_counts_add_up_to_the_catalogue(recipes):

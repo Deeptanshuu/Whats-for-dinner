@@ -1,4 +1,4 @@
-"""The two rankers the app shipped with, ported without behaviour changes.
+"""Two simple rankers, kept as baselines.
 
 They take the raw strings a person typed and score every recipe, so they can
 be measured next to the learned models.
@@ -20,7 +20,7 @@ def _preprocess(text: str) -> str:
 
 class BruteForceRanker:
     """Counts how many typed ingredients appear as substrings of the recipe's
-    ingredient text. Same scoring as ``brute_force_recommend`` in the API."""
+    ingredient text."""
 
     name = "brute_force"
 
@@ -43,8 +43,7 @@ class BruteForceRanker:
 
 
 class TfidfRanker:
-    """Binary TF-IDF over ingredient words with cosine similarity. Same setup
-    as ``recommend_recipes`` in the API."""
+    """Binary TF-IDF over ingredient words with cosine similarity."""
 
     name = "tfidf"
 

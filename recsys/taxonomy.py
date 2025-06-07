@@ -1,9 +1,8 @@
 """Cuisine and course groups for the filters.
 
-The dataset has about 80 cuisine labels and 14 course labels. The old API
-matched what the user clicked as a substring of the label, so "Indian" missed
-"Kerala Recipes" and "Main Course" missed "Lunch". Here every label is mapped
-by hand to the small set of groups the UI offers.
+The dataset has about 80 cuisine labels and 14 course labels. Matching a
+click as a substring of the label would make "Indian" miss "Kerala Recipes"
+and "Main Course" miss "Lunch", so every label is mapped by hand to the small set of groups the UI offers.
 
 A cuisine label can sit in more than one group: "Kerala Recipes" is both
 "South Indian" and "Indian". A course label sits in exactly one.
@@ -91,7 +90,7 @@ COURSE_MAP: dict[str, str] = {
     "": OTHER,
 }
 
-# Names the old UI sent that are not group names. Anything not listed here or
+# Common names that are not group names. Anything not listed here or
 # in the group names is ignored, so Russian, Irish or Vegan add no boost.
 _CUISINE_ALIASES = {
     "japanese": [EAST_ASIAN], "chinese": [EAST_ASIAN], "korean": [EAST_ASIAN], "asian": [EAST_ASIAN, SE_ASIAN],
