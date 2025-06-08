@@ -5,114 +5,52 @@
 <title>RecipeSense banner</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Gelasio:wght@400;500;600;700&display=block" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Gelasio:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&display=block" rel="stylesheet">
 <style>
-  /* Colours are the app's Tailwind classes. */
-  :root {
-    --ink: #111827;          /* gray-900 */
-    --ink-2: #4b5563;        /* gray-600 */
-    --slate-6: #475569;      /* card border, slate-600 */
-    --slate-5: #64748b;      /* option chip border, slate-500 */
-    --slate-8: #1e293b;
-    --chip: #e5e7eb;         /* gray-200 */
-    --chip-ink: #374151;     /* gray-700 */
-    --picked: #44403c;       /* stone-700, selected chip */
-    --btn: #1f2937;          /* gray-800, See Recipe */
-    --photo: #e5e7eb;
-    --veg-bg: #86efac; --veg-ink: #166534;
-    --ms: #2563eb;           /* blue-600 */
-    --shadow: 0 20px 25px -5px rgba(168,162,158,.9), 0 8px 10px -6px rgba(168,162,158,.9);
-  }
+  :root { --ink: #1e293b; --grey: #64748b; --light: #94a3b8; --accent: #15803d; --bg: #fcfbf8; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #fff; font-family: Gelasio, Georgia, serif; color: var(--ink); padding: 20px; }
+  body { background: #fff; padding: 20px; }
   #frame {
-    position: relative; width: 1280px; height: 400px; overflow: hidden;
-    background: #fefefe url("../../../web/src/components/bg.svg") -60px -40px / 430px 430px repeat;
+    width: 1280px; height: 400px; background: var(--bg); color: var(--ink);
+    font-family: Gelasio, Georgia, serif;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding-bottom: 6px;
   }
-  .card {
-    position: absolute; left: 64px; top: 34px; width: 1152px; height: 332px;
-    background: #fff; border: 2px solid var(--slate-8); border-radius: 8px; box-shadow: var(--shadow);
-    padding: 26px 30px 26px 36px; display: flex; gap: 34px;
-  }
-  .left { width: 584px; flex: none; display: flex; flex-direction: column; }
-  .brand { display: flex; align-items: center; gap: 14px; }
-  .brand svg { width: 74px; height: 74px; flex: none; }
-  .brand h1 { font-size: 70px; font-weight: 700; line-height: 1; letter-spacing: -0.5px; color: var(--btn); }
-  .tag { margin-top: 12px; font-size: 22px; line-height: 1.3; color: var(--ink-2); }
-  .pairs { margin-top: auto; display: flex; gap: 7px; align-items: flex-start; }
-  .pair { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-  .chip { display: inline-flex; align-items: center; white-space: nowrap; border-radius: 999px; font-size: 15px; font-weight: 500; padding: 2px 11px 3px; border: 2px solid var(--slate-5); }
-  .chip.opt { background: var(--chip); color: var(--chip-ink); }
-  .chip.on { background: var(--picked); color: #fff; }
-  .chip.on svg { width: 12px; height: 12px; margin-left: 4px; stroke: #fff; stroke-width: 2.5; fill: none; }
-  .down { width: 14px; height: 18px; stroke: var(--slate-5); stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-  .readas { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 15px; color: var(--ink-2); }
-
-  .right { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-  .head { display: flex; justify-content: space-between; align-items: flex-end; }
-  .head h2 { font-size: 27px; font-weight: 700; line-height: 1; }
-  .time { text-align: right; line-height: 1; }
-  .time .l { font-size: 12.5px; color: var(--ink-2); }
-  .time .v { font-size: 24px; font-weight: 700; color: var(--ms); margin-top: 3px; }
-  .cards { margin-top: 14px; flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-  .rc { background: #fff; border: 2px solid var(--slate-6); border-radius: 8px; display: flex; flex-direction: column; box-shadow: 0 8px 12px -4px rgba(168,162,158,.85); overflow: hidden; }
-  .ph { position: relative; height: 66px; background: var(--photo); display: flex; align-items: center; justify-content: center; }
-  .ph svg.u { width: 26px; height: 26px; stroke: #9ca3af; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-  .heart { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 999px; background: #fff; border: 2px solid var(--slate-6); display: flex; align-items: center; justify-content: center; }
-  .heart svg { width: 12px; height: 12px; stroke: #374151; stroke-width: 2.4; fill: none; stroke-linejoin: round; }
-  .rb { padding: 8px 10px 0; flex: 1; }
-  .rt { font-size: 15.5px; font-weight: 600; line-height: 1.22; }
-  .rm { font-size: 12.5px; color: var(--ink-2); margin-top: 4px; }
-  .rf { padding: 0 10px 9px; display: flex; justify-content: space-between; align-items: center; }
-  .veg { background: var(--veg-bg); color: var(--veg-ink); font-weight: 600; font-size: 12.5px; padding: 2px 10px 3px; border-radius: 999px; }
-  .see { white-space: nowrap; background: var(--btn); color: #fff; font-weight: 600; font-size: 12px; padding: 4px 10px 5px; border-radius: 999px; }
+  .mark { display: flex; align-items: center; gap: 22px; }
+  .mark svg { width: 62px; height: 62px; stroke: var(--ink); margin-top: 4px; }
+  .mark h1 { font-size: 92px; font-weight: 600; letter-spacing: -1.5px; line-height: 1; }
+  .tag { margin-top: 24px; font-size: 28px; color: var(--grey); }
+  .eg { margin-top: 46px; display: flex; align-items: baseline; gap: 18px; font-size: 21px; }
+  .typed { font-style: italic; color: var(--grey); }
+  .arrow { width: 44px; height: 12px; align-self: center; stroke: var(--grey); }
+  .top { color: var(--ink); font-weight: 600; }
+  .ms { font-family: Inter, sans-serif; font-size: 18px; font-weight: 600; color: var(--accent); }
 </style>
 </head>
 <body>
 <div id="frame">
-  <div class="card">
-    <div class="left">
-      <div class="brand">
-        <!-- chef's hat, drawn in the same heavy black line as the wallpaper -->
-        <svg viewBox="0 0 80 80" fill="#fff" stroke="#111" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M22 46 C10 46 6 34 12 27 C17 21 25 22 28 25 C28 14 36 9 42 10 C49 11 53 16 54 23 C58 19 67 19 71 26 C75 34 70 45 60 46 Z"/>
-          <path d="M22 46 L24 66 C35 69 49 69 58 66 L60 46"/>
-          <path d="M24 58 C35 61 48 61 59 58"/>
-          <path d="M34 47 L35 57 M48 47 L47 57"/>
-          <path d="M28 25 C29 30 31 33 34 35 M54 23 C54 28 52 31 50 33" fill="none"/>
-        </svg>
-        <h1>RecipeSense</h1>
-      </div>
-      <p class="tag">Type what's in your kitchen, the way you'd say it.<br>Get dinner ideas back in milliseconds.</p>
-      <div class="pairs" id="pairs"></div>
-    </div>
-    <div class="right">
-      <div class="head">
-        <h2>Our Top Results</h2>
-        <div class="time"><div class="l">Execution Time</div><div class="v" id="ms"></div></div>
-      </div>
-      <div class="cards" id="cards"></div>
-    </div>
+  <div class="mark">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M17 21a1 1 0 0 0 1-1v-5.35c0-.457.316-.844.727-1.041a4 4 0 0 0-2.134-7.589 5 5 0 0 0-9.186 0 4 4 0 0 0-2.134 7.588c.411.198.727.585.727 1.041V20a1 1 0 0 0 1 1Z"/>
+      <path d="M6 17h12"/>
+    </svg>
+    <h1>RecipeSense</h1>
+  </div>
+  <p class="tag">Type what is in your kitchen. Get recipes that use it.</p>
+  <div class="eg">
+    <span class="typed" id="typed"></span>
+    <svg class="arrow" viewBox="0 0 44 12" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M1 6h41M37 1.5 42 6l-5 4.5"/>
+    </svg>
+    <span class="top">Palak Paneer</span>
+    <span class="ms" id="ms"></span>
   </div>
 </div>
 <script>
-  const ex = DATA.examples, ing = ex.ingredients_example;
-  const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
-  const X = '<svg viewBox="0 0 24 24" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
-  const DOWN = '<svg class="down" viewBox="0 0 14 18"><path d="M7 2v13M2 10l5 5 5-5"/></svg>';
-  document.getElementById('pairs').innerHTML = ing.resolved.map((r) =>
-    `<div class="pair"><span class="chip opt">${esc(r.typed)}</span>${DOWN}<span class="chip on">${esc(r.canonical)}${X}</span></div>`).join('');
-  document.getElementById('ms').textContent = `${ex.api_timings.recommend_median_ms.toFixed(2)} ms`;
-  // Dataset titles carry a long subtitle after " | " or " -"; the card shows the dish name before it.
-  const short = (t) => t.split(/ \| | -/)[0];
-  // The bar sticks to the cuisine so a wrapped line never starts with it.
-  const meta = (r) => [r.cuisine, r.course].filter(Boolean).map(esc).join('&nbsp;| ');
-  const U = '<svg class="u" viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>';
-  const H = '<svg viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>';
-  document.getElementById('cards').innerHTML = ing.top.slice(0, 3).map((r) => `
-    <div class="rc"><div class="ph">${U}<span class="heart">${H}</span></div>
-      <div class="rb"><div class="rt">${esc(short(r.title))}</div><div class="rm">${meta(r)}</div></div>
-      <div class="rf">${r.veg ? '<span class="veg">Veg</span>' : '<span></span>'}<span class="see">See Recipe</span></div></div>`).join('');
+  const ex = DATA.examples;
+  document.getElementById('typed').textContent = ex.ingredients_example.typed.join(', ');
+  document.getElementById('ms').textContent = ex.api_timings.recommend_median_ms + ' ms';
+  if (!ex.ingredients_example.top[0].title.startsWith('Palak Paneer')) throw new Error('top result changed');
   window.READY = true;
 </script>
 </body>

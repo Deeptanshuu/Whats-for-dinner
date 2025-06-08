@@ -5,78 +5,82 @@
 <title>RecipeSense search results</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Gelasio:ital,wght@0,400;0,500;0,600;0,700;1,400&display=block" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Gelasio:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&display=block" rel="stylesheet">
 <style>
-  /* Colours are the app's Tailwind classes. */
-  :root {
-    --ink: #111827; --ink-2: #4b5563;
-    --slate-8: #1e293b; --slate-6: #475569; --slate-5: #64748b;
-    --chip: #e5e7eb; --chip-ink: #374151;
-    --picked: #44403c;                    /* stone-700, a selected chip */
-    --bar: #d1d5db; --track: #f3f4f6;
-    --shadow: 0 20px 25px -5px rgba(168,162,158,.9), 0 8px 10px -6px rgba(168,162,158,.9);
-  }
+  :root { --ink: #1e293b; --grey: #64748b; --dot: #a8b3c2; --hair: #e2e0da; --accent: #15803d; --bg: #fcfbf8; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #fff; font-family: Gelasio, Georgia, serif; color: var(--ink); padding: 20px; }
-  #frame {
-    width: 836px; padding: 24px 24px 28px;
-    background: #fefefe url("../../../web/src/components/bg.svg") -40px -30px / 400px 400px repeat;
-    display: flex; flex-direction: column; gap: 18px;
-  }
-  .card { background: #fff; border: 2px solid var(--slate-6); border-radius: 8px; box-shadow: var(--shadow); }
-  .title { border-color: var(--slate-8); padding: 16px 22px 15px; }
-  .title h1 { font-size: 34px; font-weight: 700; line-height: 1.12; }
-  .title p { margin-top: 6px; font-size: 16px; color: var(--ink-2); }
-  .styles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-  .style { padding: 14px 16px 18px; display: flex; flex-direction: column; align-items: flex-start; }
-  .bars { margin-top: auto; width: 100%; padding-top: 2px; }
-  .pill { display: inline-block; border: 2px solid var(--slate-5); background: var(--chip); color: var(--chip-ink); border-radius: 999px; font-size: 17px; font-weight: 600; padding: 1px 14px 3px; }
-  .desc { margin-top: 8px; font-size: 14px; line-height: 1.35; color: var(--ink-2); min-height: 38px; }
-  .q { margin-top: 8px; display: inline-block; background: var(--chip); color: #1f2937; border-radius: 14px; font-size: 14px; line-height: 1.35; padding: 5px 12px 6px; font-style: italic; }
-  .row { margin-top: 14px; }
-  .lab { display: flex; justify-content: space-between; align-items: baseline; font-size: 15px; color: var(--chip-ink); }
-  .lab b { font-size: 18px; font-weight: 700; color: var(--ink); }
-  .track { margin-top: 4px; height: 22px; border-radius: 999px; background: var(--track); }
-  .bar { height: 100%; border-radius: 999px; background: var(--bar); border: 2px solid var(--slate-5); }
-  .row.win .lab { color: var(--ink); font-weight: 700; }
-  .row.win .lab b { color: var(--picked); }
-  .row.win .bar { background: var(--picked); border-color: var(--picked); }
-  .cap { background: #f3f4f6; border-color: #18181b; box-shadow: none; padding: 12px 16px 13px; font-size: 14px; line-height: 1.42; color: var(--chip-ink); }
-  .cap b { color: var(--ink); }
+  body { background: #fff; padding: 20px; }
+  #frame { width: 836px; background: var(--bg); color: var(--ink); font-family: Gelasio, Georgia, serif; padding: 38px 48px 30px; }
+  h1 { font-size: 30px; font-weight: 600; letter-spacing: -0.3px; line-height: 1.15; }
+  .cap { margin-top: 10px; font-family: Inter, sans-serif; font-size: 14px; line-height: 1.5; color: var(--grey);  }
+  svg { display: block; margin-top: 18px; overflow: visible; }
+  .sans { font-family: Inter, sans-serif; }
 </style>
 </head>
 <body>
 <div id="frame">
-  <div class="card title">
-    <h1>Free-text search: each searcher wins one</h1>
-    <p>Top-6 hit rate. MiniLM finds a dish from its name; TF-IDF finds it from a list of ingredients.</p>
-  </div>
-  <div class="styles" id="styles"></div>
-  <div class="card cap" id="cap"></div>
+  <h1>Free-text search: each method wins one</h1>
+  <p class="cap" id="cap"></p>
+  <svg id="chart"></svg>
 </div>
 <script>
-  const rows = DATA.examples.search_eval.rows;
-  const EXQ = DATA.examples.search_eval.example_queries;
-  const SEARCHERS = [['minilm', 'MiniLM'], ['tfidf_text', 'TF-IDF over text']];
-  const STYLES = [
-    ['title', 'Title queries', 'the dish name, searched against recipe text with the title taken out'],
-    ['paraphrase', 'Ingredient-sentence queries', 'cuisine, course and three or four of its ingredients'],
-  ];
-  const get = (s, q) => rows.find((x) => x.searcher === s && x.query === q);
-  document.getElementById('styles').innerHTML = STYLES.map(([q, name, desc]) => {
-    const best = Math.max(...SEARCHERS.map(([k]) => get(k, q)['hit@6']));
-    const bars = SEARCHERS.map(([k, label]) => {
-      const v = get(k, q)['hit@6'];
-      return `<div class="row ${v === best ? 'win' : ''}"><div class="lab"><span>${label}</span><b>${(v * 100).toFixed(1)}%</b></div>
-        <div class="track"><div class="bar" style="width:${v * 100}%"></div></div></div>`;
-    }).join('');
-    return `<div class="card style"><span class="pill">${name}</span><p class="desc">${desc}</p>
-      <span class="q">&ldquo;${EXQ[q]}&rdquo;</span><div class="bars">${bars}</div></div>`;
-  }).join('');
-  const n = (q) => get('minilm', q).n.toLocaleString('en-US');
-  document.getElementById('cap').innerHTML =
-    `Known-item search on the test split: <b>${n('title')} title queries and ${n('paraphrase')} ingredient-sentence queries</b>, each built from one held-out recipe; a hit means that recipe ranks in the top 6. ` +
-    `MiniLM is all-MiniLM-L6-v2, and both searchers index the same text. So in the app, ingredient lists go to the learned ranker and free text goes to MiniLM.`;
+  // Dumbbell rows: grey dot (a) and coloured dot (b) per row, on a shared axis.
+  function dumbbell(svg, rows, o) {
+    const NS = 'http://www.w3.org/2000/svg';
+    const W = 740, labW = o.labW, x0 = labW, x1 = W - o.rightPad;
+    const top = o.seriesNames ? 40 : o.labelsAbove ? 40 : 8, gap = o.gap || 62;
+    const X = (v) => x0 + (v - o.min) / (o.max - o.min) * (x1 - x0);
+    const el = (tag, attrs, text) => {
+      const e = document.createElementNS(NS, tag);
+      for (const k in attrs) e.setAttribute(k, attrs[k]);
+      if (text != null) e.textContent = text;
+      svg.appendChild(e); return e;
+    };
+    const axisY = top + gap * (rows.length - 1) + (o.axisPad || 44);
+    for (const t of o.ticks) {
+      el('line', { x1: X(t), x2: X(t), y1: axisY, y2: axisY + 6, stroke: '#cfcbc2', 'stroke-width': 1 });
+      el('text', { x: X(t), y: axisY + 28, 'text-anchor': 'middle', class: 'sans', 'font-size': 14, fill: '#64748b' }, t + '%');
+    }
+    el('line', { x1: x0, x2: x1, y1: axisY, y2: axisY, stroke: '#cfcbc2', 'stroke-width': 1 });
+    rows.forEach((r, i) => {
+      const y = top + gap * i;
+      if (o.labelsAbove) el('text', { x: 0, y: y - 24, 'font-size': 20, fill: '#1e293b' }, r.label);
+      else el('text', { x: 0, y, 'dominant-baseline': 'central', 'font-size': 20, fill: '#1e293b' }, r.label);
+      const lo = r.a.v < r.b.v ? r.a : r.b, hi = lo === r.a ? r.b : r.a;
+      el('line', { x1: X(lo.v), x2: X(hi.v), y1: y, y2: y, stroke: '#cbd2db', 'stroke-width': 2.5 });
+      for (const [d, side] of [[lo, -1], [hi, 1]]) {
+        const col = d.win ? '#15803d' : '#94a3b8';
+        el('circle', { cx: X(d.v), cy: y, r: 7.5, fill: col });
+        const txt = el('text', { x: X(d.v) + side * 16, y, 'dominant-baseline': 'central', 'text-anchor': side < 0 ? 'end' : 'start',
+          class: 'sans', 'font-size': 16, 'font-weight': d.win ? 600 : 500, fill: d.win ? '#15803d' : '#64748b' });
+        const val = document.createElementNS(NS, 'tspan'); val.textContent = d.v.toFixed(1) + '%';
+        if (o.inlineNames) {
+          const nm = document.createElementNS(NS, 'tspan'); nm.textContent = d.name; nm.setAttribute('font-weight', 400);
+          if (side < 0) { txt.appendChild(nm); txt.appendChild(document.createTextNode(' ')); txt.appendChild(val); }
+          else { txt.appendChild(val); txt.appendChild(document.createTextNode(' ')); txt.appendChild(nm); }
+        } else txt.appendChild(val);
+      }
+      if (o.seriesNames && i === 0) {
+        for (const d of [r.a, r.b])
+          el('text', { x: X(d.v), y: y - 26, 'text-anchor': 'middle', class: 'sans', 'font-size': 14,
+            'font-weight': d.win ? 600 : 400, fill: d.win ? '#15803d' : '#64748b' }, d.name);
+      }
+    });
+    svg.setAttribute('width', W); svg.setAttribute('height', axisY + 36);
+  }
+
+  const S = DATA.examples.search_eval.rows;
+  const get = (s, q) => S.find((r) => r.searcher === s && r.query === q);
+  const NAMES = { minilm: 'MiniLM', tfidf_text: 'TF-IDF over text' };
+  const rows = [['title', 'Recipe title'], ['paraphrase', 'Ingredient sentence']].map(([q, label]) => {
+    const [a, b] = ['tfidf_text', 'minilm'].map((s) => ({ v: get(s, q)['hit@6'] * 100, name: NAMES[s] }));
+    a.win = a.v > b.v; b.win = !a.win;
+    return { label, a, b };
+  });
+  const fmt = (x) => x.toLocaleString('en-US');
+  document.getElementById('cap').textContent =
+    `Top-6 hit rate on ${fmt(get('minilm', 'title').n)} title queries and ${fmt(get('minilm', 'paraphrase').n)} ingredient-sentence queries.`;
+  dumbbell(document.getElementById('chart'), rows, { min: 0, max: 100, ticks: [0, 25, 50, 75, 100], inlineNames: true, labelsAbove: true, labW: 8, rightPad: 196, gap: 84, axisPad: 34 });
   window.READY = true;
 </script>
 </body>

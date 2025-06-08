@@ -5,263 +5,403 @@
 <title>RecipeSense architecture</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Gelasio:ital,wght@0,400;0,500;0,600;0,700;1,400&display=block" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Gelasio:wght@400;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=block" rel="stylesheet">
 <style>
-  /* Colours are the app's Tailwind classes. */
-  :root {
-    --ink: #111827; --ink-2: #4b5563; --ink-3: #6b7280;
-    --slate-8: #1e293b; --slate-6: #475569; --slate-5: #64748b;
-    --chip: #e5e7eb; --chip-ink: #374151;
-    --picked: #44403c;          /* stone-700, a selected chip */
-    --btn: #1f2937;             /* gray-800, buttons and badges */
-    --veg-bg: #86efac; --veg-ink: #166534;
-    --ms: #2563eb;              /* blue-600 */
-    --shadow: 0 20px 25px -5px rgba(168,162,158,.9), 0 8px 10px -6px rgba(168,162,158,.9);
-  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #fff; font-family: Gelasio, Georgia, serif; color: var(--ink); padding: 20px; }
-  #frame {
-    width: 1500px; padding: 26px 28px 30px;
-    background: #fefefe url("../../../web/src/components/bg.svg") -70px -50px / 640px 640px repeat;
-    display: flex; flex-direction: column; gap: 20px;
-  }
-  .card { background: #fff; border: 2px solid var(--slate-6); border-radius: 8px; box-shadow: var(--shadow); padding: 18px 22px 20px; }
-  h2 { font-size: 27px; font-weight: 700; line-height: 1.1; }
-  .sub { font-size: 16px; color: var(--ink-2); }
-  .note { font-size: 15px; line-height: 1.38; color: var(--ink-2); }
-
-  /* pills, as the app draws them */
-  .chip { display: inline-flex; align-items: center; white-space: nowrap; border-radius: 999px; font-size: 16px; font-weight: 500; padding: 2px 12px 3px; border: 2px solid var(--slate-5); line-height: 1.3; }
-  .chip.opt { background: var(--chip); color: var(--chip-ink); }
-  .chip.on { background: var(--picked); color: #fff; }
-  .chip.on svg { width: 12px; height: 12px; margin-left: 5px; stroke: #fff; stroke-width: 2.6; fill: none; }
-  .val { display: inline-block; white-space: nowrap; background: var(--chip); color: #1f2937; border-radius: 999px; font-size: 15px; padding: 2px 11px 3px; }
-  .veg { display: inline-block; background: var(--veg-bg); color: var(--veg-ink); font-weight: 600; font-size: 14.5px; padding: 2px 11px 3px; border-radius: 999px; }
-  .badge { width: 38px; height: 38px; flex: none; border-radius: 999px; background: var(--btn); color: #fff; font-size: 21px; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,.25); }
-  .to { color: var(--slate-5); font-size: 20px; line-height: 1; }
-  .ms { color: var(--ms); font-weight: 700; }
-
-  /* title */
-  .title { border-color: var(--slate-8); display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 20px 28px 22px; }
-  .title h1 { font-size: 46px; font-weight: 700; line-height: 1.05; }
-  .title .sub { margin-top: 8px; font-size: 18px; }
-  .ways { display: flex; flex-direction: column; gap: 7px; align-items: flex-end; flex: none; }
-  .ways div { display: flex; gap: 10px; align-items: center; font-size: 15px; color: var(--ink-2); }
-
-  /* ingredients + prep */
-  .row2 { display: grid; grid-template-columns: 500px minmax(0, 1fr); gap: 20px; }
-  .ing ul { list-style: none; margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
-  .ing li { display: grid; grid-template-columns: 14px 1fr auto; gap: 10px; align-items: baseline; font-size: 16.5px; line-height: 1.3; }
-  .ing li::before { content: ""; width: 10px; height: 10px; border-radius: 999px; background: var(--picked); transform: translateY(-1px); }
-  .ing li span.d { color: var(--ink-2); font-size: 15px; margin-left: 6px; }
-  .prep-head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
-  .prep-steps { margin-top: 14px; display: grid; grid-template-columns: minmax(0,1fr) 18px minmax(0,1fr) 18px minmax(0,1fr) 18px minmax(0,1fr) 18px minmax(0,1fr); align-items: stretch; }
-  .prep-steps .to { align-self: center; text-align: center; }
-  .tile { border: 2px solid var(--slate-5); border-radius: 8px; padding: 10px 11px 11px; display: flex; flex-direction: column; gap: 6px; }
-  .tile b { font-size: 16.5px; line-height: 1.2; }
-  .tile .note { font-size: 14.5px; flex: 1; }
-  .tile .val { align-self: flex-start; font-size: 13px; padding: 2px 9px 3px; white-space: normal; border-radius: 12px; }
-
-  /* method */
-  .mlabel { align-self: flex-start; border-color: var(--slate-8); border-radius: 999px; padding: 8px 24px 10px; display: flex; align-items: baseline; gap: 14px; }
-  .mlabel h2 { font-size: 26px; }
-  .steps { display: grid; grid-template-columns: 1.12fr 0.94fr 1fr; gap: 20px; align-items: start; }
-  .col { display: flex; flex-direction: column; gap: 20px; }
-  .step { display: flex; flex-direction: column; gap: 12px; }
-  .sh { display: flex; align-items: center; gap: 12px; }
-  .sh h3 { font-size: 21px; font-weight: 700; line-height: 1.15; }
-  .map { display: grid; grid-template-columns: auto 18px auto 1fr; gap: 7px 9px; align-items: center; }
-  .map .via { font-size: 14.5px; color: var(--ink-2); }
-  .rk { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; padding: 8px 0 9px; border-top: 2px solid #e5e7eb; }
-  .rk:first-of-type { border-top: 0; padding-top: 0; }
-  .rk b { font-size: 17px; }
-  .rk .note { grid-column: 1 / 3; }
-  .rk .reads { display: flex; gap: 8px; align-items: center; font-size: 14.5px; color: var(--ink-2); }
-  .rk .reads .chip { font-size: 14px; padding: 1px 10px 2px; }
-  .pool { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .big { font-size: 70px; font-weight: 700; line-height: 0.9; }
-  .feat { display: flex; flex-wrap: wrap; gap: 6px; }
-  .timing { background: #f3f4f6; border: 2px solid #18181b; border-radius: 8px; padding: 8px 12px 9px; display: flex; justify-content: space-between; align-items: center; }
-  .timing .l { font-size: 16px; font-weight: 600; }
-  .timing .v { font-size: 26px; line-height: 1.1; }
-  .timing .r { text-align: right; font-size: 13.5px; color: var(--ink-2); line-height: 1.4; }
-  .top3 { display: flex; flex-direction: column; gap: 9px; }
-  .top3 .it { display: grid; grid-template-columns: 26px 1fr; gap: 3px 10px; }
-  .top3 .n { width: 26px; height: 26px; border-radius: 999px; background: var(--btn); color: #fff; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
-  .top3 .t { font-size: 15.5px; font-weight: 600; line-height: 1.25; }
-  .top3 .m { grid-column: 2; font-size: 14px; color: var(--ink-2); display: flex; gap: 8px; align-items: center; }
-  .top3 .m .veg { font-size: 12.5px; padding: 1px 9px 2px; }
-
-  /* side dishes */
-  .sides { display: grid; grid-template-columns: 0.94fr 1.06fr; gap: 20px; }
-  .side { display: flex; flex-direction: column; gap: 13px; }
-  .side .sh { justify-content: space-between; }
-  .seg { display: inline-flex; align-items: center; gap: 9px; white-space: nowrap; }
-  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 9px; }
-  .minis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 2px; }
-  .rc { border: 2px solid var(--slate-6); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 8px 12px -4px rgba(168,162,158,.8); }
-  .rc .ph { position: relative; height: 40px; background: #e5e7eb; display: flex; align-items: center; justify-content: center; }
-  .rc .ph svg.u { width: 22px; height: 22px; stroke: #9ca3af; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-  .rc .heart { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 999px; background: #fff; border: 2px solid var(--slate-6); display: flex; align-items: center; justify-content: center; }
-  .rc .heart svg { width: 12px; height: 12px; stroke: #374151; stroke-width: 2.4; fill: none; stroke-linejoin: round; }
-  .rc .b { padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 5px; flex: 1; }
-  .rc .t { font-size: 14.5px; font-weight: 600; line-height: 1.24; flex: 1; }
-  .rc .m { font-size: 13px; color: var(--ink-2); }
-  .rc .veg { align-self: flex-start; font-size: 12.5px; padding: 1px 9px 2px; }
+  body { background: #fff; padding: 20px; }
+  #frame { width: 1500px; background: #fcfbf8; }
+  svg { display: block; }
 </style>
 </head>
 <body>
-<div id="frame">
-  <div class="card title">
-    <div>
-      <h1>How RecipeSense cooks a recommendation</h1>
-      <p class="sub">What it is built from, the prep done once, and one real request followed step by step. Every number is from the real build.</p>
-    </div>
-    <div class="ways">
-      <div>Search by ingredients <span class="val">POST /api/recommend</span></div>
-      <div>Describe it <span class="val">POST /api/search</span></div>
-      <div>More like this <span class="val">GET /api/recipe/&lt;id&gt;/similar</span></div>
-    </div>
-  </div>
-
-  <div class="row2">
-    <div class="card ing">
-      <h2>Ingredients</h2>
-      <ul id="inglist"></ul>
-    </div>
-    <div class="card">
-      <div class="prep-head"><h2>Prep, done once</h2><span class="val">python -m recsys.train &middot; about 30 s</span></div>
-      <div class="prep-steps" id="prep"></div>
-    </div>
-  </div>
-
-  <div class="card mlabel"><h2>Method</h2><span class="sub" id="mlabel"></span></div>
-
-  <div class="steps">
-   <div class="col">
-    <div class="card step">
-      <div class="sh"><div class="badge">1</div><h3>Read what was typed</h3></div>
-      <div class="map" id="map"></div>
-      <p class="note" id="order"></p>
-    </div>
-    <div class="card step">
-      <div class="sh"><div class="badge">4</div><h3>Score each one with LightGBM</h3></div>
-      <div class="pool"><span class="chip opt" id="shape"></span><span class="seg"><span class="to">&rarr;</span><span class="chip on">lambdarank, 99 trees</span></span><span class="seg"><span class="to">&rarr;</span><span class="note">one score each</span></span></div>
-      <p class="note" id="featdesc"></p>
-      <div class="feat"><span class="note" style="margin-right:2px">most gain:</span><span class="val">overlap_gap</span><span class="val">soft_gap</span><span class="val">tfidf_gap</span><span class="val">recipe_cov</span></div>
-    </div>
-   </div>
-   <div class="col">
-    <div class="card step">
-      <div class="sh"><div class="badge">2</div><h3>Three quick rankers, 50 each</h3></div>
-      <div id="rankers"></div>
-    </div>
-    <div class="card step">
-      <div class="sh"><div class="badge">5</div><h3>Filter and boost</h3></div>
-      <p class="note">Scores are scaled to 0..1, then:</p>
-      <div class="feat"><span class="veg">Veg only</span><span class="val">cuisine +0.2</span><span class="val">course +0.3</span><span class="val">likes +0.3</span></div>
-      <p class="note">Veg drops non-veg recipes; a matching cuisine, course or liked recipe lifts the score. Repeated titles are dropped.</p>
-    </div>
-   </div>
-   <div class="col">
-    <div class="card step">
-      <div class="sh"><div class="badge">3</div><h3>Pool the picks</h3></div>
-      <div class="pool"><span class="val">top 50</span><span class="to">+</span><span class="val">top 50</span><span class="to">+</span><span class="val">top 50</span><span class="seg"><span class="to">&rarr;</span><span class="note">union</span></span></div>
-      <div style="display:flex; align-items:flex-end; gap:12px"><span class="big" id="ncand"></span><span style="font-size:19px; line-height:1.25; padding-bottom:4px">recipes for this query<br><span class="note">at most 150; the lists overlap</span></span></div>
-    </div>
-    <div class="card step">
-      <div class="sh"><div class="badge">6</div><h3>Serve the top results</h3></div>
-      <div class="timing"><div><div class="l">Execution Time</div><div class="v ms" id="ms1"></div></div><div class="r">Method: Learned ranker<br>server time, median of 5</div></div>
-      <div class="top3" id="top1"></div>
-    </div>
-   </div>
-  </div>
-
-  <div class="sides">
-    <div class="card side">
-      <div class="sh"><div style="display:flex; gap:12px; align-items:center"><h2>Describe it</h2><span class="sub">free text instead of a list</span></div><span class="ms" style="font-size:24px" id="ms2"></span></div>
-      <div class="flow" id="flow2"></div>
-      <p class="note">MiniLM is all-MiniLM-L6-v2, L2-normalised. Each row of the text matrix is a recipe's title, description, cuisine, course and ingredients. Veg Mode applies here too.</p>
-      <div class="minis" id="minis2"></div>
-    </div>
-    <div class="card side">
-      <div class="sh"><div style="display:flex; gap:12px; align-items:center"><h2>More like this</h2><span class="sub">from a recipe page</span></div><span class="ms" style="font-size:24px" id="ms3"></span></div>
-      <div class="flow" id="flow3"></div>
-      <p class="note">The same 448-dim matrix builds the taste vector from your liked recipes.</p>
-      <div class="minis" id="minis3"></div>
-    </div>
-  </div>
-</div>
+<div id="frame"><svg id="svg" width="1500" height="1080" viewBox="0 0 1500 1080" xmlns="http://www.w3.org/2000/svg"></svg></div>
 <script>
-  const ex = DATA.examples;
-  const ing = ex.ingredients_example, srch = ex.search_example, sim = ex.similar_example, t = ex.api_timings, sh = ex.shapes;
-  const fmt = (x) => x.toLocaleString('en-US');
-  const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
-  const $ = (id) => document.getElementById(id);
-  const X = '<svg viewBox="0 0 24 24" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
-  const TO = '<span class="to">&rarr;</span>';
-  const seq = (items) => items.map((x, i) => i ? `<span class="seg">${TO}${x}</span>` : x).join('');
-  const meta = (r) => [r.cuisine, r.course].filter(Boolean).map(esc).join('&nbsp;| ');
-  const R = ex.catalogue.recipes, NI = ex.catalogue.ingredients;
+// One request through RecipeSense, drawn as a block diagram.
+// Numbers come from DATA.examples (examples.json) where it has them; the rest
+// are constants from the code: recsys/ranker.py, recsys/embeddings.py,
+// recsys/service.py, recsys/similar.py, models/ranker.json, data/recipes.csv.
+const ex = DATA.examples;
+const ie = ex.ingredients_example;
+const sh = ex.shapes;
+const t = ex.api_timings;
+const fmt = (x) => x.toLocaleString('en-US');
+const median = (a) => { const s = [...a].sort((x, y) => x - y); return s[(s.length - 1) >> 1]; };
+const N = ex.catalogue.recipes;                 // 6521
+const NS = fmt(N);
+const RAW_ROWS = 7540, TFIDF_WORDS = 1308, TREES = 99, LEAVES = 31;
+const TRAIN_Q = 7599, VALID_Q = 1880, PER_RANKER = 50, WINDOW = 34;
+const shp = (a) => `[${a.join(', ')}]`;
 
-  // Ingredients card. File sizes are of the files in models/ after python -m recsys.train.
-  $('inglist').innerHTML = [
-    ['data/recipes.csv', `7,540 rows, cleaned to ${fmt(R)} recipes`, ''],
-    [`${fmt(NI)} canonical ingredients`, `plus ${fmt(ex.catalogue.aliases)} aliases, like haldi`, ''],
-    ['Ingredient vectors', `${fmt(sh.ingredient_vectors[0])} &times; ${sh.ingredient_vectors[1]} dims`, '182 KB'],
-    ['LightGBM ranker', '99 trees', '351 KB'],
-    ['Text embeddings', `${fmt(sh.text_matrix[0])} &times; ${sh.text_matrix[1]} dims, MiniLM`, '5.0 MB'],
-  ].map(([a, b, c]) => `<li><span><b>${a}</b><span class="d">${b}</span></span>${c ? `<span class="val">${c}</span>` : '<span></span>'}</li>`).join('');
+const C = {
+  ink: '#1e293b', ink2: '#334155', grey: '#64748b', light: '#94a3b8', hair: '#d9d5cc',
+  accent: '#15803d', panel: '#f2f0ea', bluePanel: '#edf1f7',
+};
+const ST = {
+  plain:   { fill: '#ffffff', stroke: '#8e9aab' },
+  green:   { fill: '#e5f1e8', stroke: '#15803d' },
+  amber:   { fill: '#fbf1d6', stroke: '#c08b22' },
+  blue:    { fill: '#e6ecf5', stroke: '#52709c' },
+  offline: { fill: 'url(#hatch)', stroke: '#8e9aab', dash: '4 3' },
+};
+const FONT = { serif: 'Gelasio, Georgia, serif', sans: 'Inter, sans-serif', mono: '"JetBrains Mono", monospace' };
 
-  $('prep').innerHTML = [
-    ['Cleaning', 'drops Hindi copies and repeats; sets canonical names, aliases, veg flag', `${fmt(R)} recipes`],
-    ['Skip-gram vectors', 'Word2Vec, 64 dims, 40 epochs; the window is the whole recipe', 'ingredient_vectors.npz'],
-    ['Known-item tune queries', 'built from even recipe ids only', '7,599 train &middot; 1,880 held out'],
-    ['Ranker training', 'LightGBM lambdarank, stopped early', '99 trees &middot; ranker.txt'],
-    ['MiniLM encoding', "every recipe's text, cached until text or model change", 'text_embeddings.npy'],
-  ].map(([a, b, c]) => `<div class="tile"><b>${a}</b><span class="note">${b}</span><span class="val">${c}</span></div>`).join(TO);
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+let out = [];
+const add = (s) => out.push(s);
 
-  $('mlabel').innerHTML = `one real request: five typed ingredients, Veg Mode on, Learned ranker`;
+function text(x, y, s, o = {}) {
+  const f = FONT[o.f || 'sans'];
+  add(`<text x="${x}" y="${y}" font-family='${f}' font-size="${o.size || 12}" font-weight="${o.w || 400}"` +
+      ` fill="${o.fill || C.ink}" text-anchor="${o.a || 'start'}"${o.fit ? ` data-fit="${o.fit}"` : ''}` +
+      `${o.italic ? ' font-style="italic"' : ''}>${o.raw ? s : esc(s)}</text>`);
+}
+function rect(x, y, w, h, st, r = 6) {
+  add(`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${st.fill}" stroke="${st.stroke}"` +
+      ` stroke-width="${st.sw || 1.3}"${st.dash ? ` stroke-dasharray="${st.dash}"` : ''}/>`);
+}
+// A "3D" stack: back layers offset up and to the right, front box last.
+function stack(x, y, w, h, st, n = 3, d = 6, backDash = false) {
+  for (let i = n - 1; i >= 1; i--) {
+    const back = backDash ? { fill: C.panel === st.fill ? st.fill : st.fill, stroke: st.stroke, dash: '3 3' } : st;
+    rect(x + i * d, y - i * d, w, h, back);
+  }
+  rect(x, y, w, h, st);
+}
+function arrow(pts, o = {}) {
+  const d = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0]},${p[1]}`).join(' ');
+  add(`<path d="${d}" fill="none" stroke="${o.color || C.ink2}" stroke-width="1.4"` +
+      `${o.dash ? ' stroke-dasharray="5 4"' : ''}${o.head === false ? '' : ` marker-end="url(#${o.marker || 'ah'})"`}/>`);
+}
+function line(pts, o = {}) { arrow(pts, { ...o, head: false }); }
+function label(x, y, s, o = {}) { text(x, y, s, { f: 'mono', size: 11, fill: C.grey, ...o }); }
 
-  const via = { 'alias': 'alias', 'exact name': 'exact name', 'spelling and plural folding': 'spelling fix' };
-  $('map').innerHTML = ing.resolved.map((r) => {
-    const v = via[r.via] || r.via.replace('n-gram fuzzy (', 'fuzzy match ').replace(')', '');
-    return `<span class="chip opt">${esc(r.typed)}</span>${TO}<span class="chip on">${esc(r.canonical)}${X}</span><span class="via">${esc(v)}</span>`;
-  }).join('');
-  $('order').innerHTML = `Tried in order, first hit wins: exact name or alias, spelling and plural folding, character n-gram fuzzy match (at least 0.70).`;
+// Seeded random, so the shaded cells are the same on every build.
+function rng(seed) {
+  return () => { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let r = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r; return ((r ^ (r >>> 14)) >>> 0) / 4294967296; };
+}
+const RAMP = {
+  amber: ['#fbf0d2', '#f3d898', '#e0b35a', '#bf8a2c', '#8c5f14'],
+  blue:  ['#e4ebf5', '#c1d0e6', '#8fa9cf', '#5b7cad', '#304f80'],
+  ink:   ['#8c5f14'],
+};
+// Grid of cells. groups: column counts with a wider gap between groups.
+function grid(x, y, cols, rows, o = {}) {
+  const cs = o.cs || 6, gap = o.gap || 1.2, r = rng(o.seed || 1), ramp = RAMP[o.ramp || 'amber'];
+  const groups = o.groups || [cols];
+  let cx = x;
+  const xs = [];
+  groups.forEach((g, gi) => { for (let i = 0; i < g; i++) { xs.push(cx); cx += cs + gap; } cx += o.groupGap || 0; });
+  for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
+    const v = r();
+    let fill;
+    if (o.sparse) fill = v < o.sparse ? ramp[ramp.length - 1 - Math.floor(r() * 2)] : '#ffffff';
+    else fill = ramp[Math.min(ramp.length - 1, Math.floor(v * ramp.length))];
+    add(`<rect x="${xs[i].toFixed(1)}" y="${(y + j * (cs + gap)).toFixed(1)}" width="${cs}" height="${cs}" rx="0.8"` +
+        ` fill="${fill}" stroke="${o.sparse ? '#e3ded3' : 'none'}" stroke-width="0.6"/>`);
+  }
+  const w = xs[xs.length - 1] + cs - x, h = rows * (cs + gap) - gap;
+  return { w, h };
+}
+// A grid tile with frames stacked behind it (one frame per recipe row block).
+function tile(x, y, cols, rows, o = {}) {
+  const cs = o.cs || 6, gap = o.gap || 1.2, pad = 3;
+  const w = cols * (cs + gap) - gap + 2 * pad, h = rows * (cs + gap) - gap + 2 * pad;
+  const frame = { fill: '#ffffff', stroke: o.frame || '#b9b2a4', dash: o.dash, sw: 1 };
+  for (let i = (o.layers || 1) - 1; i >= 1; i--) rect(x + i * 4, y - i * 4, w, h, frame, 3);
+  rect(x, y, w, h, frame, 3);
+  grid(x + pad, y + pad, cols, rows, o);
+  if (o.hiRow != null) {
+    add(`<rect x="${x + 1.5}" y="${y + pad + o.hiRow * (cs + gap) - 1.5}" width="${w - 3}" height="${cs + 3}" rx="1.5"` +
+        ` fill="none" stroke="${C.accent}" stroke-width="1.4"/>`);
+  }
+  return { w, h };
+}
+function tree(x, y, s) {   // tiny decision tree glyph, root at (x, y)
+  const pts = [[x, y], [x - s, y + s], [x + s, y + s], [x - 1.5 * s, y + 2 * s], [x - 0.5 * s, y + 2 * s], [x + 0.5 * s, y + 2 * s], [x + 1.5 * s, y + 2 * s]];
+  const edges = [[0, 1], [0, 2], [1, 3], [1, 4], [2, 5], [2, 6]];
+  edges.forEach(([a, b]) => add(`<line x1="${pts[a][0]}" y1="${pts[a][1]}" x2="${pts[b][0]}" y2="${pts[b][1]}" stroke="${C.accent}" stroke-width="1.1"/>`));
+  pts.forEach(([px, py], i) => add(`<circle cx="${px}" cy="${py}" r="${i < 3 ? 2.6 : 2.1}" fill="${i < 3 ? '#ffffff' : C.accent}" stroke="${C.accent}" stroke-width="1.1"/>`));
+}
+const short = (title) => title.replace(/\s*\bRecipe\b/g, '').split(/ \|| -(?=\S)/)[0].trim();
 
-  $('rankers').innerHTML = [
-    ['TF-IDF', 'binary, over the raw ingredient words; the original app', '<span class="chip opt">words as typed</span>'],
-    ['Ingredient overlap', "share of the query's IDF weight the recipe covers", '<span class="chip on">canonical names</span>'],
-    ['Ingredient embedding', 'cosine of IDF-weighted 64-dim vectors', '<span class="chip on">canonical names</span>'],
-  ].map(([a, b, c]) => `<div class="rk"><b>${a}</b><span class="reads">reads ${c}</span><span class="note">${b}</span></div>`).join('');
+// ---------- defs ----------
+add(`<defs>
+  <marker id="ah" viewBox="0 0 10 10" refX="9.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0.5 L10,5 L0,9.5 z" fill="${C.ink2}"/></marker>
+  <marker id="ahg" viewBox="0 0 10 10" refX="9.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0.5 L10,5 L0,9.5 z" fill="${C.accent}"/></marker>
+  <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+    <rect width="6" height="6" fill="#f7f5f0"/><line x1="0" y1="0" x2="0" y2="6" stroke="#e4dfd4" stroke-width="1.3"/>
+  </pattern>
+</defs>`);
+add(`<rect width="1500" height="1080" fill="#fcfbf8"/>`);
 
-  $('ncand').textContent = ing.candidates;
-  $('shape').textContent = `${ing.candidates} recipes × ${ing.n_features} features`;
-  $('featdesc').textContent = 'The features: the three scores and their gaps to the best candidate; how much of the query and of the recipe is covered (by count, IDF and vectors); recipe length.';
+// ---------- title, subtitle, legend ----------
+text(48, 78, 'RecipeSense, one request', { f: 'serif', size: 40, w: 600 });
+text(49, 112, `${NS} recipes · ${fmt(ex.catalogue.ingredients)} ingredients · ${sh.ingredient_vectors[1]}-d ingredient vectors · ${sh.text_matrix[1]}-d text vectors · ${TREES} trees`,
+  { f: 'mono', size: 13, fill: C.grey });
 
-  $('ms1').textContent = `${t.recommend_median_ms.toFixed(2)} ms`;
-  $('top1').innerHTML = ing.top.slice(0, 3).map((r, i) => `<div class="it"><div class="n">${i + 1}</div><div class="t">${esc(r.title)}</div>
-    <div class="m">${r.veg ? '<span class="veg">Veg</span>' : ''}<span>${meta(r)}</span><span>&middot; ${r.matched.length} of ${ing.typed.length} found</span></div></div>`).join('');
+const LEG = [
+  [868, 48, 'plain', 'plain step'], [1052, 48, 'green', 'learned model'], [1236, 48, 'amber', 'scores, matrices'],
+  [868, 80, 'blue', 'text-embedding path'], [1052, 80, 'offline', 'built offline'], [1236, 80, 'stack', 'repeated: rows, trees, layers'],
+];
+LEG.forEach(([x, y, k, s]) => {
+  if (k === 'stack') { rect(x + 8, y - 12, 20, 13, ST.plain, 3); rect(x + 4, y - 8, 20, 13, ST.plain, 3); rect(x, y - 4, 20, 13, ST.plain, 3); }
+  else rect(x, y - 8, 28, 16, ST[k], 4);
+  text(x + 40, y + 4.5, s, { size: 13, fill: C.ink2 });
+});
+text(868, 116.5, '[6521, 64]', { f: 'mono', size: 11.5, fill: C.grey });
+text(953, 116.5, 'array shape, rows first', { size: 13, fill: C.ink2 });
+line([[1150, 112], [1186, 112]], { dash: true, color: C.accent });
+add(`<path d="M1186,112 l-6,-3.5 v7 z" fill="${C.accent}"/>`);
+text(1196, 116.5, 'taste from liked recipes', { size: 13, fill: C.ink2 });
 
-  const U = '<svg class="u" viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>';
-  const H = '<svg viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>';
-  const minis = (rows) => rows.slice(0, 3).map((r) => `<div class="rc"><div class="ph">${U}<span class="heart">${H}</span></div>
-    <div class="b"><div class="t">${esc(r.title)}</div><div class="m">${meta(r)}</div>${r.veg ? '<span class="veg">Veg</span>' : ''}</div></div>`).join('');
+// ================= INGREDIENT SEARCH (main panel) =================
+const MX = 410;                                   // main axis
+add(`<rect x="40" y="240" width="780" height="810" rx="14" fill="${C.panel}"/>`);
+text(64, 268, 'Ingredient search', { f: 'serif', size: 18, w: 600 });
+text(800, 268, `${t.recommend_median_ms} ms`, { size: 14, w: 600, fill: C.accent, a: 'end' });
 
-  $('ms2').textContent = `${t.search_median_ms.toFixed(2)} ms`;
-  $('flow2').innerHTML = seq([`<span class="val" style="font-style:italic">&ldquo;${esc(srch.query)}&rdquo;</span>`,
-    '<span class="chip on">MiniLM, 384 dims</span>',
-    `<span class="chip opt">cosine against ${fmt(sh.text_matrix[0])} &times; ${sh.text_matrix[1]}</span>`]);
-  $('minis2').innerHTML = minis(srch.top);
+// Output: top results and the real top 3
+rect(260, 166, 300, 48, ST.plain);
+text(MX, 187, 'Top results', { f: 'serif', size: 16, w: 600, a: 'middle' });
+text(MX, 205, 'scores divided by the best one', { size: 11, fill: C.grey, a: 'middle' });
+arrow([[560, 190], [588, 190]]);
+ie.top.slice(0, 3).forEach((r, i) => {
+  const y = 175 + i * 21;
+  text(596, y + 4, String(i + 1), { size: 11, fill: C.grey });
+  text(609, y + 4, short(r.title), { size: 12.5, fill: C.ink, fit: 122 });
+  add(`<rect x="738" y="${y - 3}" width="44" height="6" rx="1.5" fill="#e6e1d6"/>`);
+  add(`<rect x="738" y="${y - 3}" width="${(44 * r.score).toFixed(1)}" height="6" rx="1.5" fill="${C.accent}"/>`);
+  text(815, y + 4, r.score.toFixed(2), { f: 'mono', size: 11, fill: C.ink2, a: 'end' });
+});
 
-  const simMed = [...t.similar_2121_ms].sort((a, b) => a - b)[1];
-  $('ms3').textContent = `${simMed.toFixed(2)} ms`;
-  $('flow3').innerHTML = seq([`<span class="val">${esc(sim.source)}</span>`,
-    `<span class="chip on">ingredients, ${sh.recipe_ingredient_vectors[1]} dims</span><span class="to">+</span><span class="chip on">text, ${sh.text_matrix[1]} dims</span>`,
-    `<span class="chip opt">${sh.combined[1]} dims, half weight each</span>`, `<span class="chip opt">cosine against all ${fmt(sh.combined[0])}</span>`]);
-  $('minis3').innerHTML = minis(sim.top);
+// Filters and boosts
+arrow([[MX, 280], [MX, 216]]);
+label(MX + 8, 262, 'top 24');
+rect(230, 280, 360, 50, ST.plain);
+text(MX, 300, 'Filters and boosts', { f: 'serif', size: 16, w: 600, a: 'middle' });
+text(MX, 319, 'veg is a filter · cuisine +0.2 · course +0.3 · likes +0.3', { size: 11.5, fill: C.grey, a: 'middle' });
+
+// LightGBM
+arrow([[MX, 364], [MX, 332]]);
+label(MX + 8, 352, `scores [${ie.candidates}]`);
+stack(260, 376, 300, 56, ST.green, 3, 6);
+tree(284, 391, 6); tree(308, 391, 6); tree(332, 391, 6);
+text(356, 400, 'LightGBM lambdarank', { f: 'serif', size: 16, w: 600 });
+text(356, 419, `${LEAVES} leaves a tree · trained offline`, { size: 11, fill: C.grey });
+text(586, 412, `×${TREES}`, { f: 'serif', size: 19, w: 600, fill: C.accent });
+
+// Feature matrix
+arrow([[MX, 464], [MX, 434]]);
+label(MX + 8, 453, `[${ie.candidates}, ${ie.n_features}]`);
+rect(60, 464, 740, 110, ST.amber);
+rect(74, 474, 192, 92, { fill: '#ffffff', stroke: '#c9b48a', sw: 1 }, 3);
+grid(80, 479, 18, 9, { cs: 8, gap: 1.5, groups: [3, 6, 5, 4], groupGap: 4, seed: 11, ramp: 'amber' });
+text(282, 488, 'Feature matrix', { f: 'serif', size: 16, w: 600 });
+text(410, 488, `one row per candidate · ${shp([ie.candidates, ie.n_features])}`, { size: 11.5, fill: C.grey });
+const FAM = [
+  ['ranker scores', 'emb_cos tfidf_cos overlap'],
+  ['coverage', 'matched query_cov recipe_cov idf_query_cov idf_recipe_cov soft_cov'],
+  ['sizes', 'recipe_len extra n_items n_keys n_missing'],
+  ['gap to best', 'emb_gap tfidf_gap overlap_gap soft_gap'],
+];
+FAM.forEach(([k, v], i) => {
+  text(282, 510 + i * 16, k, { size: 11, fill: C.grey });
+  text(372, 510 + i * 16, v, { f: 'mono', size: 10.5, fill: C.ink2 });
+});
+
+// Union
+arrow([[MX, 604], [MX, 576]]);
+label(MX + 8, 594, `candidate ids [${ie.candidates}]`);
+rect(290, 604, 240, 44, ST.plain);
+text(MX, 623, 'Union of candidates', { f: 'serif', size: 15, w: 600, a: 'middle' });
+text(MX, 640, `at most ${3 * PER_RANKER} · here ${ie.candidates}`, { f: 'mono', size: 10.5, fill: C.grey, a: 'middle' });
+
+// Three cheap rankers
+const RK = [
+  { c: 170, title: 'TF-IDF', sub: 'on the words as typed', foot: 'binary weights, cosine',
+    tile: { sparse: 0.16, seed: 3 }, s1: shp([N, TFIDF_WORDS]), s2: 'recipe × word' },
+  { c: 410, title: 'Ingredient overlap', sub: 'IDF-weighted coverage', foot: '+ 0.4 × share of recipe covered',
+    tile: { sparse: 0.11, seed: 5 }, s1: shp([N, ex.catalogue.ingredients]), s2: 'recipe × ingredient' },
+  { c: 650, title: 'Ingredient embedding', sub: 'cosine of IDF-weighted vectors', foot: 'query = IDF-weighted mean',
+    tile: { seed: 7, dash: '3 2', frame: '#8e9aab' }, s1: shp(sh.ingredient_vectors), s2: 'skip-gram, offline' },
+];
+RK.forEach((r) => {
+  const x = r.c - 105, y = 712;
+  stack(x, y, 210, 130, ST.plain, 3, 6);
+  text(r.c, y + 24, r.title, { f: 'serif', size: 16, w: 600, a: 'middle' });
+  text(r.c, y + 42, r.sub, { size: 11.5, fill: C.grey, a: 'middle' });
+  tile(x + 16, y + 54, 10, 6, { cs: 5.6, gap: 1.2, ramp: 'amber', ...r.tile });
+  text(x + 102, y + 72, r.s1, { f: 'mono', size: 10.5, fill: C.ink2 });
+  text(x + 102, y + 88, r.s2, { size: 10.5, fill: C.grey });
+  text(r.c, y + 120, r.foot, { size: 10.5, fill: C.grey, a: 'middle' });
+});
+// ranker outputs into the union
+arrow([[170, 700], [170, 668], [350, 668], [350, 650]]);
+arrow([[410, 700], [410, 650]]);
+arrow([[650, 700], [650, 668], [470, 668], [470, 650]]);
+RK.forEach((r) => label(r.c + 8, 692, `[${N}] → top ${PER_RANKER}`));
+
+// Resolve
+rect(300, 884, 470, 90, ST.plain);
+text(316, 906, 'Resolve', { f: 'serif', size: 16, w: 600 });
+['exact name or one of ' + ex.catalogue.aliases + ' aliases', 'spelling and plural folding', 'char 2–4-gram match, cosine ≥ 0.70']
+  .forEach((s, i) => text(316, 927 + i * 16, `${i + 1}  ${s}`, { size: 11.5, fill: C.ink2 }));
+line([[540, 894], [540, 964]], { color: '#e3ded3' });
+ie.resolved.forEach((r, i) => {
+  const y = 903 + i * 15.5;
+  text(626, y, r.typed, { f: 'mono', size: 10.5, fill: C.grey, a: 'end' });
+  text(640, y, '→', { f: 'mono', size: 10.5, fill: C.light, a: 'middle' });
+  const fz = r.via.match(/\(([\d.]+)\)/);
+  text(654, y, esc(r.canonical) + (fz ? `<tspan fill="${C.accent}" dx="7">${fz[1]}</tspan>` : ''),
+    { f: 'mono', size: 10.5, fill: C.ink, raw: true });
+});
+// ids up to overlap and embedding
+line([[535, 884], [535, 864]]);
+line([[410, 864], [650, 864]]);
+arrow([[410, 864], [410, 844]]);
+arrow([[650, 864], [650, 844]]);
+label(543, 879, `canonical ids [${ie.resolved.length}]`);
+
+// Request
+rect(110, 1004, 590, 32, ST.plain);
+text(126, 1024.5, 'typed', { size: 11.5, fill: C.grey });
+text(422, 1024.5, ie.typed.map((s) => `"${s}"`).join(', '), { f: 'mono', size: 12.5, fill: C.ink, a: 'middle' });
+arrow([[170, 1004], [170, 844]]);
+label(178, 940, `raw strings [${ie.typed.length}]`);
+arrow([[535, 1004], [535, 976]]);
+
+// ================= FREE-TEXT SEARCH =================
+const se = ex.search_example;
+add(`<rect x="860" y="170" width="600" height="280" rx="14" fill="${C.bluePanel}"/>`);
+text(880, 197, 'Free-text search', { f: 'serif', size: 17, w: 600 });
+text(1440, 197, `${t.search_median_ms} ms`, { size: 14, w: 600, fill: C.accent, a: 'end' });
+rect(880, 216, 200, 60, ST.plain);
+text(894, 234, 'query', { size: 11, fill: C.grey });
+const qw = se.query.split(' ');
+const q1 = qw.slice(0, 3).join(' '), q2 = qw.slice(3).join(' ');
+text(894, 251, `"${q1}`, { f: 'mono', size: 11.5, fill: C.ink });
+text(894, 267, `${q2}"`, { f: 'mono', size: 11.5, fill: C.ink });
+arrow([[1080, 246], [1128, 246]]);
+stack(1130, 216, 170, 60, ST.blue, 3, 5, true);
+text(1215, 237, 'MiniLM encoder', { f: 'serif', size: 15, w: 600, a: 'middle' });
+text(1215, 253, 'all-MiniLM-L6-v2', { f: 'mono', size: 10.5, fill: C.ink2, a: 'middle' });
+text(1215, 268, 'mean-pooled, unit length', { size: 10.5, fill: C.grey, a: 'middle' });
+text(1318, 252, '×6', { f: 'serif', size: 17, w: 600, fill: '#52709c' });
+text(1318, 268, 'layers', { size: 10.5, fill: C.grey });
+arrow([[1215, 276], [1215, 310]]);
+text(1223, 298, 'query vector', { size: 11, fill: C.grey });
+label(1297, 298, `[${sh.text_matrix[1]}]`);
+grid(1342, 291, 12, 1, { cs: 6, gap: 1.2, ramp: 'blue', seed: 21 });
+// cosine against the text matrix
+rect(1150, 312, 290, 118, ST.plain);
+text(1166, 334, 'Cosine against every recipe', { f: 'serif', size: 15, w: 600 });
+tile(1166, 354, 14, 7, { cs: 5.6, gap: 1.2, ramp: 'blue', seed: 23, layers: 3, dash: '3 2', frame: '#8e9aab' });
+text(1286, 370, shp(sh.text_matrix), { f: 'mono', size: 10.5, fill: C.ink2 });
+text(1286, 386, 'text_embeddings.npy', { f: 'mono', size: 10, fill: C.grey });
+text(1286, 402, 'unit rows: dot = cosine', { size: 10.5, fill: C.grey });
+arrow([[1150, 392], [1112, 392]]);
+label(1131, 385, `[${N}]`, { a: 'middle', size: 10 });
+rect(880, 312, 230, 118, ST.plain);
+text(894, 330, 'top results', { size: 11, fill: C.grey });
+se.top.slice(0, 3).forEach((r, i) => {
+  const y = 352 + i * 22;
+  text(894, y, String(i + 1), { size: 11, fill: C.grey });
+  text(907, y, short(r.title), { size: 11.5, fill: C.ink, fit: 160 });
+  text(1100, y, r.score.toFixed(2), { f: 'mono', size: 10.5, fill: C.ink2, a: 'end' });
+});
+text(894, 419, 'then the same filters and boosts', { size: 10.5, fill: C.grey });
+
+// ================= MORE LIKE THIS =================
+const si = ex.similar_example;
+add(`<rect x="860" y="470" width="600" height="270" rx="14" fill="${C.panel}"/>`);
+text(880, 497, 'More like this', { f: 'serif', size: 17, w: 600 });
+text(1440, 497, `${median(t.similar_2121_ms)} ms`, { size: 14, w: 600, fill: C.accent, a: 'end' });
+rect(880, 532, 130, 56, ST.plain);
+text(894, 553, `recipe ${si.source_id}`, { f: 'mono', size: 11, fill: C.grey });
+text(894, 574, short(si.source), { f: 'serif', size: 14, w: 600 });
+line([[1010, 560], [1032, 560]]);
+arrow([[1032, 560], [1032, 536], [1058, 536]]);
+arrow([[1032, 560], [1032, 596], [1058, 596]]);
+rect(1060, 512, 180, 48, ST.plain);
+tile(1070, 519, 10, 4, { cs: 5.2, gap: 1.2, ramp: 'amber', seed: 31, hiRow: 1 });
+text(1152, 532, 'ingredient row', { size: 11, fill: C.ink2 });
+text(1152, 548, shp(sh.recipe_ingredient_vectors), { f: 'mono', size: 10.5, fill: C.grey });
+rect(1060, 572, 180, 48, ST.blue);
+tile(1070, 579, 10, 4, { cs: 5.2, gap: 1.2, ramp: 'blue', seed: 33, hiRow: 1 });
+text(1152, 592, 'text row', { size: 11, fill: C.ink2 });
+text(1152, 608, shp(sh.text_matrix), { f: 'mono', size: 10.5, fill: C.grey });
+arrow([[1240, 536], [1262, 536], [1262, 556], [1288, 556]]);
+arrow([[1240, 596], [1262, 596], [1262, 578], [1288, 578]]);
+rect(1290, 540, 150, 54, ST.plain);
+text(1302, 559, 'join, each × √0.5', { size: 11.5, fill: C.ink2 });
+const dimA = sh.ingredient_vectors[1], dimAll = sh.combined[1];
+const sw = 88, swA = sw * dimA / dimAll;
+add(`<rect x="1302" y="569" width="${swA.toFixed(1)}" height="9" fill="${RAMP.amber[2]}"/>`);
+add(`<rect x="${(1302 + swA).toFixed(1)}" y="569" width="${(sw - swA).toFixed(1)}" height="9" fill="${RAMP.blue[2]}"/>`);
+label(1396, 578, `[${dimAll}]`, { size: 10.5 });
+arrow([[1365, 594], [1365, 644]]);
+stack(1180, 656, 250, 66, ST.plain, 3, 5);
+text(1196, 677, `Cosine against all ${NS}`, { f: 'serif', size: 14, w: 600 });
+text(1196, 695, `${shp(sh.combined)} · ingredient + text`, { f: 'mono', size: 10.5, fill: C.ink2 });
+text(1196, 712, 'same matrix gives the taste vector', { size: 10.5, fill: C.grey });
+arrow([[1180, 690], [1142, 690]]);
+label(1161, 683, `[${N}]`, { a: 'middle', size: 10 });
+rect(880, 646, 260, 76, ST.plain);
+si.top.slice(0, 3).forEach((r, i) => {
+  const y = 668 + i * 22;
+  text(894, y, String(i + 1), { size: 11, fill: C.grey });
+  text(907, y, short(r.title), { size: 11.5, fill: C.ink, fit: 190 });
+  text(1130, y, r.score.toFixed(2), { f: 'mono', size: 10.5, fill: C.ink2, a: 'end' });
+});
+// taste vector: mean of liked rows in the joined matrix, back to "likes +0.3"
+arrow([[1250, 722], [1250, 731], [840, 731], [840, 305], [592, 305]], { dash: true, color: C.accent, marker: 'ahg' });
+text(600, 299, 'taste from liked recipes', { f: 'mono', size: 10.5, fill: C.accent });
+
+// ================= BUILT OFFLINE =================
+add(`<rect x="860" y="760" width="600" height="290" rx="14" fill="none" stroke="#a8b0bc" stroke-width="1.2" stroke-dasharray="5 4"/>`);
+text(880, 787, 'Built once, offline', { f: 'serif', size: 17, w: 600 });
+rect(880, 800, 150, 40, ST.offline);
+text(892, 817, 'data/recipes.csv', { f: 'mono', size: 10.5, fill: C.ink });
+text(892, 832, `${fmt(RAW_ROWS)} rows`, { size: 10.5, fill: C.grey });
+arrow([[1030, 820], [1068, 820]]);
+rect(1070, 800, 180, 40, ST.plain);
+text(1082, 817, 'clean, de-duplicate', { size: 11.5, fill: C.ink2 });
+text(1082, 832, 'drop empty and Hindi copies', { size: 10.5, fill: C.grey });
+arrow([[1250, 820], [1288, 820]]);
+rect(1290, 800, 150, 40, ST.plain);
+text(1302, 817, `${NS} recipes`, { f: 'serif', size: 13.5, w: 600 });
+text(1302, 832, `${fmt(ex.catalogue.ingredients)} ingredients`, { size: 10.5, fill: C.grey });
+line([[1365, 840], [1365, 852], [874, 852], [874, 1005]]);
+const OFF = [
+  ['Skip-gram on ingredient lists', `${dimA} dims · 40 epochs · window ${WINDOW} = whole recipe`, 'models/ingredient_vectors.npz', `${shp(sh.ingredient_vectors)} · 182 KB`],
+  ['Tune queries, then lambdarank', `even-id half · ${fmt(TRAIN_Q)} train, ${fmt(VALID_Q)} held out`, 'models/ranker.txt', `${TREES} trees · 351 KB`],
+  ['MiniLM encodes each recipe', 'title, description, cuisine, course, ingredients', 'models/text_embeddings.npy', `${shp(sh.text_matrix)} float16 · 5.0 MB`],
+];
+OFF.forEach(([a, b, f, s], i) => {
+  const y = 862 + i * 60;
+  arrow([[874, y + 23], [888, y + 23]]);
+  rect(890, y, 300, 46, ST.plain);
+  text(902, y + 19, a, { size: 12, w: 500, fill: C.ink });
+  text(902, y + 36, b, { size: 10.5, fill: C.grey });
+  arrow([[1190, y + 23], [1228, y + 23]]);
+  rect(1230, y, 210, 46, ST.offline);
+  text(1242, y + 19, f, { f: 'mono', size: 10.5, fill: C.ink });
+  text(1242, y + 36, s, { f: 'mono', size: 10, fill: C.grey });
+});
+
+document.getElementById('svg').innerHTML = out.join('\n');
+
+// Shorten titles that do not fit their column.
+document.fonts.ready.then(() => {
+  document.querySelectorAll('text[data-fit]').forEach((el) => {
+    const max = +el.dataset.fit;
+    let s = el.textContent;
+    if (el.getComputedTextLength() <= max) return;
+    while (s.length > 4 && el.getComputedTextLength() > max) { s = s.slice(0, -1).trimEnd(); el.textContent = s + '…'; }
+  });
   window.READY = true;
+});
 </script>
 </body>
 </html>
