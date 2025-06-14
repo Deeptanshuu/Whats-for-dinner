@@ -88,11 +88,38 @@ def test_semantic_cache_roundtrip(tmp_path, monkeypatch):
     assert calls == [4, 4]  # stale, rebuilt
 
 
+def test_digest_includes_model_file(tmp_path):
+    a, b = tmp_path / "a.onnx", tmp_path / "b.onnx"
+    a.write_bytes(b"one")
+    b.write_bytes(b"two")
+    assert semantic._file_id(a) != semantic._file_id(b)
+    assert semantic.OnnxEncoder(a).identity == semantic._file_id(a)
+
+
+def test_encoder_is_lazy():
+    enc = semantic.OnnxEncoder()
+    assert enc._session is None  # nothing loaded until the first encode
+
+
+def test_no_torch_import():
+    import sys
+
+    assert "torch" not in sys.modules and "sentence_transformers" not in sys.modules
+
+
 @pytest.mark.model
 def test_real_model_ranks_sensibly():
-    pytest.importorskip("sentence_transformers")
+    pytest.importorskip("onnxruntime")
+    if not (semantic.ONNX_PATH.exists() and semantic.TOKENIZER_PATH.exists()):
+        pytest.skip("models/minilm is missing")
     s = semantic.SemanticSearch(frame(), cache=False)
     idx, scores = s.search("creamy spinach curry", k=4)
     assert idx[0] == 0
     assert np.all(np.diff(scores) <= 1e-6)
     assert np.allclose(np.linalg.norm(s.matrix, axis=1), 1, atol=1e-4)
+    # the default is one text per run, so a text encodes the same alone or in a list
+    texts = ["spinach", "a much longer sentence about creamy spinach curry with paneer and cumin", "tea"]
+    whole = s.encode(texts)
+    assert np.allclose(whole[1], s.encode([texts[1]])[0], atol=1e-4)
+    assert np.allclose(whole, s.encode(texts, batch_size=1), atol=1e-6)
+    assert np.all((whole * s.encode(texts, batch_size=3)).sum(axis=1) > 0.97)  # padding only nudges

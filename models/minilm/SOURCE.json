@@ -1,0 +1,10 @@
+{
+  "repo": "sentence-transformers/all-MiniLM-L6-v2",
+  "revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+  "files": {
+    "model.onnx": "onnx/model_quint8_avx2.onnx (8-bit quantised, about 23 MB)",
+    "tokenizer.json": "tokenizer.json (the file's own limit of 128 is overridden in code)"
+  },
+  "max_seq_length": 256,
+  "note": "Loaded by recsys/semantic.py. Replace model.onnx and the search matrix rebuilds on its own."
+}
