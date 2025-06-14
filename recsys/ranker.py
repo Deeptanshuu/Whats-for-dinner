@@ -8,6 +8,7 @@ Part of tune is held out, by recipe, for early stopping.
 from __future__ import annotations
 
 import json
+import re
 import zlib
 from pathlib import Path
 
@@ -127,6 +128,90 @@ def _top(scores: np.ndarray, k: int) -> np.ndarray:
     return np.argpartition(-scores, k - 1)[:k]
 
 
+class TreeEnsemble:
+    """LightGBM trees evaluated with NumPy only, so serving needs no lightgbm.
+
+    Reads LightGBM's own text model. It handles what this model uses: numeric
+    splits that go left when value <= threshold, leaf values that already
+    include the learning rate, and a plain sum over all trees. Features must
+    not be NaN. Every tree is flattened into one set of arrays, with leaves as
+    nodes that point to themselves, and all rows walk all trees together.
+    """
+
+    def __init__(self, feature_names: list[str], feature: np.ndarray, threshold: np.ndarray,
+                 left: np.ndarray, right: np.ndarray, value: np.ndarray, roots: np.ndarray, depth: int):
+        self.feature_names = feature_names
+        self.feature, self.threshold, self.left, self.right = feature, threshold, left, right
+        self.value, self.roots, self.depth = value, roots, depth
+
+    @classmethod
+    def from_file(cls, path: Path) -> "TreeEnsemble":
+        return cls.from_text(Path(path).read_text())
+
+    @classmethod
+    def from_text(cls, text: str) -> "TreeEnsemble":
+        head, *blocks = re.split(r"^Tree=\d+\s*$", text, flags=re.M)
+        names = re.search(r"^feature_names=(.*)$", head, re.M).group(1).split()
+        feature, threshold, left, right, value, roots = [], [], [], [], [], []
+        offset, depth = 0, 0
+        for block in blocks:
+            f = {k: v for k, v in re.findall(r"^(\w+)=(.*)$", block.split("end of trees")[0], re.M)}
+            if int(f["num_cat"]) or f.get("is_linear", "0") != "0":
+                raise ValueError("only numeric, non-linear trees are supported")
+            n_leaves = int(f["num_leaves"])
+            n_int = n_leaves - 1
+            leaf_value = np.array(f["leaf_value"].split(), dtype=np.float64)
+            roots.append(offset)
+            if n_int == 0:  # a tree that is a single leaf
+                feature.append([0]); threshold.append([np.inf]); left.append([offset]); right.append([offset])
+                value.append(leaf_value[:1])
+                offset += 1
+                continue
+            kinds = np.array(f["decision_type"].split(), dtype=np.int64)
+            if (kinds & 1).any() or ((kinds >> 2) & 3).any():
+                raise ValueError("categorical or missing-value splits are not supported")
+
+            def child(c):  # internal node c >= 0, leaf ~c otherwise
+                c = np.array(c.split(), dtype=np.int64)
+                return np.where(c >= 0, c, n_int + (-c - 1)) + offset
+
+            leaf_ids = np.arange(n_int, n_int + n_leaves) + offset
+            feature.append(np.concatenate([np.array(f["split_feature"].split(), dtype=np.int64),
+                                           np.zeros(n_leaves, dtype=np.int64)]))
+            threshold.append(np.concatenate([np.array(f["threshold"].split(), dtype=np.float64),
+                                             np.full(n_leaves, np.inf)]))
+            left.append(np.concatenate([child(f["left_child"]), leaf_ids]))
+            right.append(np.concatenate([child(f["right_child"]), leaf_ids]))
+            value.append(np.concatenate([np.zeros(n_int), leaf_value]))
+            offset += n_int + n_leaves
+            depth = max(depth, _tree_depth(left[-1] - roots[-1], right[-1] - roots[-1], n_int))
+        return cls(names, np.concatenate(feature), np.concatenate(threshold), np.concatenate(left),
+                   np.concatenate(right), np.concatenate(value), np.array(roots), depth)
+
+    def predict(self, X: np.ndarray, **_) -> np.ndarray:
+        """Raw score per row: the sum of the leaf each tree sends the row to."""
+        X = np.asarray(X, dtype=np.float64)
+        if np.isnan(X).any():
+            raise ValueError("features must not contain NaN")
+        rows = np.arange(len(X))[None, :]
+        node = np.repeat(self.roots[:, None], len(X), axis=1)
+        for _ in range(self.depth):
+            go_left = X[rows, self.feature[node]] <= self.threshold[node]
+            node = np.where(go_left, self.left[node], self.right[node])
+        return self.value[node].sum(axis=0)
+
+    def feature_name(self) -> list[str]:
+        return list(self.feature_names)
+
+
+def _tree_depth(left: np.ndarray, right: np.ndarray, n_int: int) -> int:
+    depth, level = 0, [0]
+    while level:
+        level = [c for n in level for c in (left[n], right[n]) if c < n_int]
+        depth += 1
+    return depth
+
+
 class LearnedRanker:
     """Scores every catalogue row. Rows outside the candidate set sit below
     every candidate, ordered among themselves by the overlap score."""
@@ -140,7 +225,7 @@ class LearnedRanker:
 
     def score(self, query: list[str]) -> np.ndarray:
         cands, X, overlap = self.features.build(query)
-        pred = self.booster.predict(X, num_threads=1)
+        pred = self.booster.predict(X)
         floor = float(pred.min()) - 2.0
         out = floor + 0.5 * overlap / max(float(overlap.max()), 1e-6)
         out[cands] = pred
@@ -210,13 +295,12 @@ def save_ranker(booster, info: dict, n_candidates: int, path: Path = MODEL_PATH,
 
 
 def load_ranker(path: Path = MODEL_PATH, meta: Path = META_PATH):
-    """Return (booster, meta) or None if missing or built for other features."""
-    import lightgbm as lgb
-
+    """Return (trees, meta) or None if missing or built for other features.
+    The trees run on NumPy alone; lightgbm is only needed to train."""
     if not (path.exists() and meta.exists()):
         return None
     info = json.loads(meta.read_text())
-    booster = lgb.Booster(model_file=str(path))
-    if booster.feature_name() != list(FEATURES):
+    trees = TreeEnsemble.from_file(path)
+    if trees.feature_name() != list(FEATURES):
         return None
-    return booster, info
+    return trees, info

@@ -11,7 +11,7 @@ import pandas as pd
 from .baselines import BruteForceRanker, TfidfRanker
 from .data import Vocabulary
 from .embeddings import VECTORS_PATH, EmbeddingRanker, IngredientIndex, OverlapRanker, load_vectors, train_vectors
-from .ranker import FeatureBuilder, LearnedRanker, load_ranker, train_ranker
+from .ranker import FeatureBuilder, LearnedRanker, TreeEnsemble, load_ranker, train_ranker
 
 
 class _Parts:
@@ -57,6 +57,7 @@ class _Parts:
                 features = self._features()
                 queries = build_queries(self.recipes, self.vocab, "tune")
                 booster, _ = train_ranker(features, [q for qs in queries.values() for q in qs])
+                booster = TreeEnsemble.from_text(booster.model_to_string(num_iteration=booster.best_iteration))
             return LearnedRanker(features, booster, len(self.recipes))
         return self.get("learned", make)
 
