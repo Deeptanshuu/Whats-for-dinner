@@ -7,7 +7,7 @@
 
 **Type what is in your kitchen, or describe what you feel like eating. RecipeSense ranks 6,521 recipes in about 3 ms.**
 
-**[Results](#how-good-is-it)** &nbsp;&nbsp;|&nbsp;&nbsp; **[Under the hood](#under-the-hood)** &nbsp;&nbsp;|&nbsp;&nbsp; **[API](server/README.md)**
+**[Live demo](https://recipesense.vercel.app)** &nbsp;&nbsp;|&nbsp;&nbsp; **[Results](#how-good-is-it)** &nbsp;&nbsp;|&nbsp;&nbsp; **[Under the hood](#under-the-hood)** &nbsp;&nbsp;|&nbsp;&nbsp; **[API](server/README.md)**
 
 </div>
 
@@ -144,6 +144,16 @@ cd web && npm install && npm run dev
 
 It runs on CPU. Set `VITE_API_URL` in `web/.env` if the API is somewhere else.
 
+**Deployed on Vercel** as one project: `vercel.json` builds `web/` as static files and serves the
+Flask app as a single Python function (`api/index.py`) under `/api`, on the same origin. The
+function installs only `requirements.txt`: no PyTorch and no LightGBM at serving time. MiniLM
+runs on ONNX Runtime and the ranker's trees are scored in NumPy, with output identical to
+LightGBM's. The `Dockerfile` runs the same thing in one container anywhere else:
+
+```bash
+docker build -t recipesense . && docker run -p 7860:7860 recipesense
+```
+
 ## Retrain and re-measure
 
 | Task | Command |
@@ -177,6 +187,7 @@ skips all of that: the query is embedded once and compared against a 6,521 x 384
 ```
 recsys/     data cleaning, baselines, embeddings, learned ranker, text search, evaluation
 server/     Flask routes over one Recommender object
+api/        Vercel entry point
 web/        React, Vite and Tailwind front end
 models/     ingredient vectors (180 KB), ranker (350 KB), text embeddings (5 MB), MiniLM (23 MB)
 data/       recipes.csv, 7,540 rows
