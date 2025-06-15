@@ -1,4 +1,0 @@
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-pythonpath = ["."]
-markers = ["model: needs the MiniLM files in models/minilm"]
