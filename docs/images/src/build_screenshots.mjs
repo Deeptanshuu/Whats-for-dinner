@@ -1,7 +1,7 @@
 // Regenerates docs/images/app-*.png from the real app talking to the real API.
 //
 // Start the two servers first (from the repo root unless noted):
-//   PORT=5057 python -m api.app
+//   PORT=5057 python -m server.app
 //   cd web && VITE_API_URL=http://localhost:5057 npm run dev -- --port 5174
 //
 // Then run (playwright-core is not a repo dependency, so point NODE_PATH at an install):

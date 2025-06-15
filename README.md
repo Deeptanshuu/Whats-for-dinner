@@ -1,13 +1,13 @@
 <div align="center">
 
-<img src="docs/images/banner.png" alt="RecipeSense: type what is in your kitchen and get recipes that use it. haldi, paneer, palak, green chilly, tomatoe returns Palak Paneer in 2.43 ms" width="100%">
+<img src="docs/images/banner.png" alt="RecipeSense: type what is in your kitchen and get recipes that use it. haldi, paneer, palak, green chilly, tomatoe returns Palak Paneer in 2.39 ms" width="100%">
 
 <br>
 <br>
 
 **Type what is in your kitchen, or describe what you feel like eating. RecipeSense ranks 6,521 recipes in about 3 ms.**
 
-**[Results](#how-good-is-it)** &nbsp;&nbsp;|&nbsp;&nbsp; **[Under the hood](#under-the-hood)** &nbsp;&nbsp;|&nbsp;&nbsp; **[API](api/README.md)**
+**[Results](#how-good-is-it)** &nbsp;&nbsp;|&nbsp;&nbsp; **[Under the hood](#under-the-hood)** &nbsp;&nbsp;|&nbsp;&nbsp; **[API](server/README.md)**
 
 </div>
 
@@ -53,9 +53,9 @@ for r in rec.similar(210, limit=3):   # 210 is Paneer And Spinach Puff
 0.77   45 min  Palak Paneer Kathi Roll Recipe -High Protein Spinach Cottage Cheese Wraps Recipe
 0.69   60 min  Palak Paneer Recipe | Cottage Cheese In Spinach Gravy
 
-0.73  Creamed Spinach Recipe
-0.68  Spiced Turnips with Spinach Recipe
-0.68  Sauteed Spinach With Garlic And Cheese Recipe
+0.74  Creamed Spinach Recipe
+0.69  Spiced Turnips with Spinach Recipe
+0.68  Spinach Corn Sabzi Recipe
 
 0.84  Paneer Cheese Puffs Recipe
 0.83  Spinach and Paneer Cornmeal Roll Recipe
@@ -102,9 +102,9 @@ Top-1 for the learned ranker is 80.5% / 85.5% / 95.3%, against 45.1% / 61.9% / 6
 | Searcher | Recipe title, top 6 | Ingredient sentence, top 6 |
 |---|---|---|
 | TF-IDF over recipe text | 91.6% | **81.5%** |
-| MiniLM | **95.3%** | 31.0% |
+| MiniLM | **95.6%** | 31.6% |
 
-<img src="docs/images/results_search.png" alt="Free-text search, top-6 hit rate. MiniLM wins on recipe titles, 95.3% against 91.6% over 3,238 queries; TF-IDF over text wins on ingredient sentences, 81.5% against 31.0% over 3,063 queries" width="100%">
+<img src="docs/images/results_search.png" alt="Free-text search, top-6 hit rate. MiniLM wins on recipe titles, 95.6% against 91.6% over 3,238 queries; TF-IDF over text wins on ingredient sentences, 81.5% against 31.6% over 3,063 queries" width="100%">
 
 Most of the gain is data cleaning: resolving aliases and plurals takes typed queries from 72% to
 93% before any model is trained. The learned ranker adds the rest, mostly on pantry queries, where
@@ -126,14 +126,14 @@ and free text goes to MiniLM.
 ```bash
 git clone https://github.com/Deeptanshuu/recipesense.git
 cd recipesense
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 ```
 
 Start the API on http://localhost:5000. The trained models are committed, so there is nothing to
-download except the MiniLM weights on first use:
+download:
 
 ```bash
-python -m api.app
+python -m server.app
 ```
 
 Then the web app, on http://localhost:5173:
@@ -151,7 +151,7 @@ It runs on CPU. Set `VITE_API_URL` in `web/.env` if the API is somewhere else.
 | Train ingredient vectors and the ranker, about 30 s | `python -m recsys.train` |
 | Evaluate the ingredient rankers on `test` | `python -m recsys.evaluate` |
 | Evaluate free-text search | `python -m recsys.eval_semantic` |
-| Tests (123) | `python -m pytest` |
+| Tests (131) | `python -m pytest` |
 | Web lint and build | `cd web && npm run lint && npm run build` |
 | Rebuild the README images | `node docs/images/src/build.mjs` (needs playwright-core, see the file header) |
 
@@ -160,7 +160,7 @@ stopping. No test query is used for training or tuning.
 
 ## Under the hood
 
-<img src="docs/images/architecture.png" alt="Block diagram of one RecipeSense request. Five typed ingredients are resolved to canonical ids and scored by TF-IDF, ingredient overlap and ingredient embeddings; the top 50 of each become 98 candidates with 18 features that a 99-tree LightGBM ranker scores; filters and boosts give Palak Paneer first in 2.43 ms. Side panels show free-text search with MiniLM (12.33 ms), more-like-this over a joined 448-dim matrix (1.51 ms) and the files built offline" width="100%">
+<img src="docs/images/architecture.png" alt="Block diagram of one RecipeSense request. Five typed ingredients are resolved to canonical ids and scored by TF-IDF, ingredient overlap and ingredient embeddings; the top 50 of each become 98 candidates with 18 features that a 99-tree LightGBM ranker scores; filters and boosts give Palak Paneer first in 2.39 ms. Side panels show free-text search with MiniLM (1.94 ms), more-like-this over a joined 448-dim matrix (0.82 ms) and the files built offline" width="100%">
 
 Typed ingredients are resolved to canonical names, with a character n-gram fallback for
 misspellings. The overlap and embedding rankers work on those names, TF-IDF on the text as typed,
@@ -171,14 +171,14 @@ skips all of that: the query is embedded once and compared against a 6,521 x 384
 
 | Doc | Covers |
 |---|---|
-| [API](api/README.md) | Endpoints, request and response shapes, environment variables |
+| [API](server/README.md) | Endpoints, request and response shapes, environment variables |
 | [Results](docs/results.json) | Every metric for every ranker and query style |
 
 ```
 recsys/     data cleaning, baselines, embeddings, learned ranker, text search, evaluation
-api/        Flask routes over one Recommender object
+server/     Flask routes over one Recommender object
 web/        React, Vite and Tailwind front end
-models/     ingredient vectors (180 KB), ranker (350 KB), text embeddings (5 MB)
+models/     ingredient vectors (180 KB), ranker (350 KB), text embeddings (5 MB), MiniLM (23 MB)
 data/       recipes.csv, 7,540 rows
 tests/      pytest suite
 ```
@@ -193,7 +193,7 @@ what a person would call a dozen cuisines, and the same ingredient spelled many 
 ## Acknowledgements
 
 Recipes and photos: [Archana's Kitchen](https://www.archanaskitchen.com).
-Text encoder: [all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2) (Reimers and Gurevych).
+Text encoder: [all-MiniLM-L6-v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2) (Reimers and Gurevych), the 8-bit ONNX build, run with ONNX Runtime.
 Ingredient vectors: gensim Word2Vec. Ranker: LightGBM.
 
 ## Copyright

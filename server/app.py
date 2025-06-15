@@ -13,8 +13,9 @@ os.environ.setdefault("OMP_NUM_THREADS", "1")
 
 import threading  # noqa: E402
 import time  # noqa: E402
+from pathlib import Path  # noqa: E402
 
-from flask import Flask, jsonify, request
+from flask import Flask, abort, jsonify, request, send_from_directory
 from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
 
@@ -193,6 +194,23 @@ def create_app(recommender: Recommender | None = None, warm: bool | None = None)
     @app.get("/api/health")
     def health():
         return jsonify({"status": "ok", "recipes": rec.meta()["recipes"], "ready": rec.ready()})
+
+    # ----- web app -----
+
+    web_dist = os.environ.get("WEB_DIST")
+    if web_dist and (Path(web_dist) / "index.html").is_file():
+        root = Path(web_dist).resolve()
+
+        @app.get("/", defaults={"path": ""})
+        @app.get("/<path:path>")
+        def web(path: str):
+            """Serve the built front end. Unknown paths get index.html so the
+            client-side routes survive a page refresh."""
+            if path.startswith("api/"):
+                abort(404)
+            if path and (root / path).is_file():
+                return send_from_directory(root, path, max_age=3600)
+            return send_from_directory(root, "index.html", max_age=0)
 
     # ----- errors -----
 

@@ -1,5 +1,7 @@
 // Small client for the recommender API. All calls go through here.
-const BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/+$/, '');
+// In a production build the API is served from the same origin as the page.
+const FALLBACK = import.meta.env.DEV ? 'http://localhost:5000' : '';
+const BASE = (import.meta.env.VITE_API_URL ?? FALLBACK).replace(/\/+$/, '');
 
 export class ApiError extends Error {
   constructor(message, status) {

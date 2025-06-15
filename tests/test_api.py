@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from api.app import create_app
+from server.app import create_app
 from recsys.service import Recommender
 
 CARD_KEYS = {"id", "title", "total_time", "image", "veg", "cuisine", "course", "score"}
@@ -342,3 +342,16 @@ def test_warm_up_sets_ready_flags(recipes):
     assert rec.ready() == {"ranker": False, "search": False}
     rec.warm()
     assert rec.ready() == {"ranker": True, "search": True}
+
+
+def test_serves_built_web_app(recommender, tmp_path, monkeypatch):
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "index.html").write_text("<title>RecipeSense</title>")
+    (tmp_path / "assets" / "app.js").write_text("console.log(1)")
+    monkeypatch.setenv("WEB_DIST", str(tmp_path))
+    client = create_app(recommender).test_client()
+    assert b"RecipeSense" in client.get("/").data
+    assert b"RecipeSense" in client.get("/recipe/5").data  # client-side route
+    assert client.get("/assets/app.js").data == b"console.log(1)"
+    assert client.get("/api/nope").status_code == 404
+    assert client.get("/api/health").json["status"] == "ok"

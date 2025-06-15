@@ -1,0 +1,7 @@
+# Training, evaluation, tests and the container. The API itself only needs
+# requirements.txt.
+-r requirements.txt
+gensim==4.3.3
+lightgbm==4.6.0
+pytest==8.3.5
+gunicorn==23.0.0

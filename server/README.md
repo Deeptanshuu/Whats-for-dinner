@@ -7,7 +7,7 @@ rankers load once at start-up and stay in memory.
 
 ```
 pip install -r requirements.txt
-python -m api.app
+python -m server.app
 ```
 
 | Variable | Default | Meaning |
@@ -15,9 +15,9 @@ python -m api.app
 | `HOST` | `127.0.0.1` | Interface to bind |
 | `PORT` | `5000` | Port |
 | `CORS_ORIGINS` | `*` | Comma separated allowed origins |
-| `RECSYS_WARM` | `1` with `python -m api.app`, else `0` | Build the default ranker and the semantic index in a background thread at start-up |
+| `RECSYS_WARM` | `1` with `python -m server.app`, else `0` | Build the default ranker and the semantic index in a background thread at start-up |
 
-`api/app.py` sets `OPENBLAS_NUM_THREADS` and `OMP_NUM_THREADS` to `1` (unless
+`server/app.py` sets `OPENBLAS_NUM_THREADS` and `OMP_NUM_THREADS` to `1` (unless
 already set) before numpy loads; small matrix products are much slower with
 many BLAS threads.
 

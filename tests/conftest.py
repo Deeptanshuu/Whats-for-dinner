@@ -4,7 +4,7 @@ import pytest
 
 os.environ["RECSYS_WARM"] = "0"  # no background warm-up under tests
 
-from api.app import create_app
+from server.app import create_app
 from recsys.data import Vocabulary, load_recipes
 from recsys.service import Recommender
 
@@ -23,7 +23,7 @@ def vocab(recipes):
 @pytest.fixture(scope="session")
 def recommender(recipes):
     rec = Recommender(recipes=recipes)
-    # Tests must not load the sentence model, so use the TF-IDF fallbacks.
+    # Keep API tests fast and independent of the models: use the TF-IDF fallbacks.
     rec._semantic_failed = True
     rec._failed.update({"embedding", "learned"})
     return rec
