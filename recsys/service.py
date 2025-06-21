@@ -51,9 +51,18 @@ def _minutes(value) -> int | None:
 
 
 def _scale(scores: np.ndarray) -> np.ndarray:
+    """Scale to 0..1 with the best score at 1.
+
+    The learned ranker's raw scores can be negative, so those are shifted to
+    start at 0 first. Rankers that never go below 0 are only divided by the
+    best score, which keeps 0 meaning "no match".
+    """
     scores = np.asarray(scores, dtype=np.float64)
-    top = scores.max() if scores.size else 0.0
-    return scores / top if top > 0 else np.zeros_like(scores)
+    if not scores.size:
+        return scores
+    low = min(float(scores.min()), 0.0)
+    span = float(scores.max()) - low
+    return (scores - low) / span if span > 0 else np.zeros_like(scores)
 
 
 class Recommender:

@@ -355,3 +355,14 @@ def test_serves_built_web_app(recommender, tmp_path, monkeypatch):
     assert client.get("/assets/app.js").data == b"console.log(1)"
     assert client.get("/api/nope").status_code == 404
     assert client.get("/api/health").json["status"] == "ok"
+
+
+def test_scale_keeps_negative_scores():
+    import numpy as np
+
+    from recsys.service import _scale
+
+    out = _scale(np.array([-4.0, -1.0, 2.0]))
+    assert out.tolist() == [0.0, 0.5, 1.0]
+    assert _scale(np.array([0.0, 1.0, 4.0])).tolist() == [0.0, 0.25, 1.0]
+    assert _scale(np.array([0.0, 0.0])).tolist() == [0.0, 0.0]
