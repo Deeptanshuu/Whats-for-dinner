@@ -2,6 +2,42 @@
 @tailwind components;
 @tailwind utilities;
 
-:root{
-    font-family:Georgia, 'Times New Roman', Times, serif;
+/*
+  Achromatic ledger: the chrome is ink on a warm off-white ground, selections are near-black,
+  and the one hue (green #15803d) is kept for data: the timing figure and the vegetarian mark.
+*/
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-paper font-sans text-ink antialiased;
+  }
+  :focus-visible {
+    @apply outline-none ring-2 ring-ink/30 ring-offset-2 ring-offset-paper;
+  }
+}
+
+@layer components {
+  /* One chip style for every pick in the app: ingredients, cuisines, courses, models. */
+  .chip {
+    @apply inline-flex min-h-11 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3.5 text-[15px] text-slate-700 transition-colors hover:border-slate-400 hover:text-ink lg:min-h-9 lg:text-sm;
+  }
+  .chip-on {
+    @apply border-ink bg-ink text-white hover:border-slate-700 hover:bg-slate-700 hover:text-white;
+  }
+  .label {
+    @apply text-sm font-medium text-ink;
+  }
+  .field {
+    @apply w-full border border-slate-300 bg-white px-4 text-base text-ink placeholder:text-slate-500 transition-colors focus:border-slate-500 focus:outline-none;
+  }
+  .btn-primary {
+    @apply inline-flex min-h-12 items-center justify-center rounded-full bg-ink px-6 text-base font-medium text-white transition-colors hover:bg-slate-700 active:bg-slate-900 disabled:opacity-70;
+  }
+  .btn-quiet {
+    @apply inline-flex min-h-11 items-center justify-center rounded-full bg-[#ebe9e4] px-5 text-[15px] font-medium text-ink transition-colors hover:bg-[#e2dfd8];
+  }
 }

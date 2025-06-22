@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Menu } from 'lucide-react';
+import { SlidersHorizontal } from 'lucide-react';
 import SearchPanel from './SearchPanel';
 import ResultsGrid from './ResultsGrid';
 import useLikes from '../useLikes';
 import { recommend, search, getMeta } from '../api';
-import bgImage from './bg.svg';
+import Wordmark from './Wordmark';
 
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 12;
+const TAGLINE = 'Type what is in your kitchen. Get recipes that use it.';
 const RESULT_LIMIT = 60;
 
 // Used when /api/meta cannot be reached.
@@ -27,7 +28,10 @@ const Home = () => {
   const [lastRun, setLastRun] = useState(null);
   const [timing, setTiming] = useState({ current: null, previous: null });
   const [page, setPage] = useState(1);
-  const [isMenuVisible, setIsMenuVisible] = useState(false);
+  // Phones only: after a search the controls fold into an "Edit search" row so results come first.
+  const [collapsed, setCollapsed] = useState(false);
+  // An example description picked on the empty screen; the panel fills itself in and runs it.
+  const [preset, setPreset] = useState(null);
   const { liked, toggle, clear } = useLikes();
   const resultRef = useRef(null);
   const reqId = useRef(0);
@@ -48,13 +52,6 @@ const Home = () => {
         if (err.name !== 'AbortError') setMeta({ ...FALLBACK_META, status: 'fallback' });
       });
     return () => controller.abort();
-  }, []);
-
-  useEffect(() => {
-    const onResize = () => setIsMenuVisible(window.innerWidth >= 1000);
-    window.addEventListener('resize', onResize);
-    onResize();
-    return () => window.removeEventListener('resize', onResize);
   }, []);
 
   const modelLabel = useCallback(
@@ -96,8 +93,19 @@ const Home = () => {
     }
   }, [liked, modelLabel]);
 
+  const isPhone = () => window.matchMedia('(max-width: 1023px)').matches;
+
+  const startSearch = (params) => {
+    if (isPhone()) {
+      setCollapsed(true);
+      window.scrollTo({ top: 0 });
+    }
+    runSearch(params);
+  };
+
   const clearResults = () => {
     reqId.current += 1;
+    setCollapsed(false);
     setResults({ status: 'idle', items: [], error: '' });
     setLastRun(null);
     setTiming({ current: null, previous: null });
@@ -109,34 +117,48 @@ const Home = () => {
   };
 
   return (
-    <div
-      className="home flex flex-col md:flex-row bg-white min-h-screen"
-      style={{ background: `url(${bgImage}) repeat`, backgroundSize: '500px 500px' }}
-    >
-      <button
-        type="button"
-        aria-label="Toggle menu"
-        className="fixed top-[1.4rem] left-[1.2rem] z-50 bg-gray-800 text-white p-2 rounded-full shadow-lg"
-        onClick={() => setIsMenuVisible((v) => !v)}
-      >
-        <Menu size={24} />
-      </button>
+    <div className="mx-auto min-h-screen max-w-[1440px] lg:flex">
+      <aside className="lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-[400px] lg:shrink-0 lg:flex-col lg:border-r lg:border-slate-200">
+        <header className="px-5 pb-6 pt-7 lg:px-8 lg:pt-9">
+          <Wordmark />
+          {/* Below the desktop layout the empty-state heading is hidden, so the tagline is the page title there. */}
+          {results.status === 'idle' ? (
+            <>
+              <h1 className="mt-1 text-balance text-[15px] font-normal text-slate-500 lg:hidden">{TAGLINE}</h1>
+              <p className="mt-1 hidden text-balance text-[15px] text-slate-500 lg:block">{TAGLINE}</p>
+            </>
+          ) : (
+            <p className="mt-1 text-balance text-[15px] text-slate-500">{TAGLINE}</p>
+          )}
+        </header>
 
-      <SearchPanel
-        visible={isMenuVisible}
-        onClose={() => setIsMenuVisible(false)}
-        meta={meta}
-        busy={results.status === 'loading'}
-        hasResults={results.status === 'done'}
-        likedCount={liked.length}
-        onClearLikes={clear}
-        onSearch={runSearch}
-        onClear={clearResults}
-      />
+        {collapsed && (
+          <div className="px-5 lg:hidden">
+            <button type="button" onClick={() => setCollapsed(false)} className="btn-quiet w-full gap-2">
+              <SlidersHorizontal size={16} aria-hidden="true" />
+              Edit search
+            </button>
+          </div>
+        )}
 
-      <div
+        <SearchPanel
+          className={`${collapsed ? 'hidden' : 'flex'} lg:flex lg:min-h-0 lg:flex-1`}
+          meta={meta}
+          busy={results.status === 'loading'}
+          hasResults={results.status === 'done'}
+          likedCount={liked.length}
+          onClearLikes={clear}
+          onSearch={startSearch}
+          onClear={clearResults}
+          preset={preset}
+        />
+      </aside>
+
+      <main
         ref={resultRef}
-        className={`result mb-10 ${isMenuVisible ? 'md:w-2/3' : 'w-full'} transition-all duration-300 ease-in-out p-5`}
+        className={`min-w-0 flex-1 scroll-mt-4 px-5 pb-16 pt-8 lg:px-12 lg:pt-9 ${
+          results.status === 'idle' ? 'hidden lg:block' : ''
+        } ${collapsed || results.status === 'idle' ? '' : 'border-t border-slate-200 lg:border-t-0'}`}
       >
         <ResultsGrid
           status={results.status}
@@ -150,8 +172,9 @@ const Home = () => {
           liked={liked}
           onToggleLike={toggle}
           onRetry={() => lastRun && runSearch(lastRun)}
+          onExample={(query) => setPreset({ query, at: Date.now() })}
         />
-      </div>
+      </main>
     </div>
   );
 };

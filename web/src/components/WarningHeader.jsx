@@ -18,8 +18,8 @@ const WarningHeader = () => {
   if (!offline) return null;
 
   return (
-    <div className="bg-yellow-500 text-white text-center py-3 text-xl">
-      <strong>Warning:</strong> Server is offline and not reachable. Please check your internet connection or try again later.
+    <div className="border-b border-red-100 bg-red-50 px-4 py-3 text-center text-[15px] text-red-800" role="alert">
+      <strong className="font-semibold">Warning:</strong> Server is offline and not reachable. Please check your internet connection or try again later.
     </div>
   );
 };

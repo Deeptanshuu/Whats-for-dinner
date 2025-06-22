@@ -6,8 +6,14 @@ module.exports = {
   ],
   theme: {
     extend: {
-      maxWidth: {
-        'md': '1000px', // Changed to max width for md
+      colors: {
+        paper: '#fcfbf8',
+        ink: '#1e293b',
+        accent: '#15803d',
+      },
+      fontFamily: {
+        serif: ['Gelasio', 'Georgia', '"Times New Roman"', 'serif'],
+        sans: ['Inter', 'system-ui', '-apple-system', '"Segoe UI"', 'Roboto', 'sans-serif'],
       },
     },
   },

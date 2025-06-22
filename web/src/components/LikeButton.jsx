@@ -12,9 +12,13 @@ const LikeButton = ({ liked, onToggle, className = '' }) => (
       e.stopPropagation();
       onToggle();
     }}
-    className={`p-2 rounded-full bg-white border-2 border-slate-600 shadow-md hover:bg-gray-200 transition duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 ${className}`}
+    className={`inline-flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:bg-slate-100 ${className}`}
   >
-    <Heart size={20} className={liked ? 'text-red-600 fill-red-600' : 'text-gray-700'} />
+    <Heart
+      size={20}
+      strokeWidth={1.75}
+      className={liked ? 'fill-ink text-ink' : 'text-slate-500'}
+    />
   </button>
 );
 

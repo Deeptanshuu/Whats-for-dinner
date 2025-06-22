@@ -1,23 +1,27 @@
 /* eslint-disable react/prop-types */
 // Controlled: the parent owns the value so Clear can reset it.
-const VegToggle = ({ value = false, onChange }) => {
-  return (
-    <button
-      type="button"
-      aria-pressed={value}
-      onClick={() => onChange && onChange(!value)}
-      className={`relative inline-flex items-center ring-2 ring-offset-2   h-6 rounded-full w-11 focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ease-in-out duration-200 ${
-        value ? 'bg-green-500 ring-green-500' : 'bg-stone-400 ring-stone-500 focus:ring-green-500'
+const VegToggle = ({ value = false, onChange, id }) => (
+  <button
+    id={id}
+    type="button"
+    role="switch"
+    aria-checked={value}
+    onClick={() => onChange && onChange(!value)}
+    className="inline-flex h-11 items-center"
+  >
+    <span className="sr-only">Vegetarian only</span>
+    <span
+      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ${
+        value ? 'bg-accent' : 'bg-slate-300'
       }`}
     >
-      <span className="sr-only">Toggle vegetarian</span>
       <span
-        className={`inline-block w-4 h-4 transform rounded-full bg-white transition ease-in-out duration-200 ${
-          value ? 'translate-x-6' : 'translate-x-1'
+        className={`inline-block h-4 w-4 rounded-full bg-white transition-transform duration-200 ${
+          value ? 'translate-x-[18px]' : 'translate-x-0.5'
         }`}
       />
-    </button>
-  );
-};
+    </span>
+  </button>
+);
 
 export default VegToggle;

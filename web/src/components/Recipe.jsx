@@ -1,14 +1,14 @@
 /* eslint-disable react/prop-types */
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Clock, Utensils, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import Loading from './Loading';
 import LikeButton from './LikeButton';
 import RecipeCard from './RecipeCard';
+import Wordmark from './Wordmark';
 import useLikes from '../useLikes';
 import { getRecipe, getSimilar } from '../api';
-import { formatMinutes } from '../utils';
-import bgImage from './bg.svg';
+import { formatMinutes, displayTitle, displayLabel } from '../utils';
 
 const toList = (value, sep) => {
   if (Array.isArray(value)) return value.map(String);
@@ -16,22 +16,38 @@ const toList = (value, sep) => {
   return [];
 };
 
+// The source text runs sentences together; group them two at a time into steps.
+const sentence = (s) => (/[.!?]$/.test(s) ? s : `${s}.`);
 const formatInstructions = (instructions) => {
   const steps = toList(instructions, '.').filter((step) => step !== '|');
-  const pairedSteps = [];
+  const out = [];
   for (let i = 0; i < steps.length; i += 2) {
-    pairedSteps.push({
-      stepNumber: Math.floor(i / 2) + 1,
-      lineOne: steps[i],
-      lineTwo: steps[i + 1] || '',
-    });
+    out.push([steps[i], steps[i + 1]].filter(Boolean).map(sentence).join(' '));
   }
-  return pairedSteps;
+  return out;
 };
 
 const Page = ({ children }) => (
-  <div className="w-full min-h-screen" style={{ background: `url(${bgImage}) repeat`, backgroundSize: '500px 500px' }}>
+  <div className="min-h-screen">
+    <header className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-5 py-6 lg:px-8">
+      <Wordmark />
+      <Link to="/" className="inline-flex min-h-11 items-center gap-1.5 text-[15px] text-slate-600 hover:text-ink">
+        <ArrowLeft size={16} aria-hidden="true" />
+        <span className="hidden sm:inline">Back to search</span>
+        <span className="sm:hidden">Search</span>
+      </Link>
+    </header>
     {children}
+  </div>
+);
+
+const Fact = ({ label, value, veg }) => (
+  <div className="min-w-0">
+    <dt className="text-sm text-slate-500">{label}</dt>
+    <dd className={`mt-0.5 flex items-center gap-1.5 text-base ${veg ? 'text-green-800' : 'text-ink'}`}>
+      {veg && <span className="h-2 w-2 shrink-0 rounded-full bg-accent" aria-hidden="true" />}
+      {value}
+    </dd>
   </div>
 );
 
@@ -64,29 +80,32 @@ const Recipe = () => {
     return () => controller.abort();
   }, [id, attempt]);
 
+  useEffect(() => {
+    if (state.status === 'done') document.title = `${displayTitle(state.recipe.name)} - RecipeSense`;
+    return () => { document.title = 'RecipeSense'; };
+  }, [state]);
+
   if (state.status === 'loading') {
-    return <Page><div className="text-center pt-96 pb-64"><Loading /></div></Page>;
+    return <Page><div className="py-24"><Loading label="Loading recipe" /></div></Page>;
   }
 
   if (state.status === 'error') {
     return (
       <Page>
-        <div className="max-w-4xl mx-auto mt-16 p-6 bg-white border-2 border-black shadow-lg text-center">
-          <h1 className="text-3xl font-bold mb-3">{state.notFound ? 'Recipe not found' : 'Something went wrong'}</h1>
-          <p className="text-gray-700 mb-6" role="alert">{state.notFound ? 'That recipe may have been removed.' : state.error}</p>
-          <div className="flex justify-center gap-3">
+        <div className="mx-auto max-w-5xl px-5 py-16 lg:px-8">
+          <h1 className="font-serif text-[28px] font-medium text-ink">
+            {state.notFound ? 'Recipe not found' : 'Something went wrong'}
+          </h1>
+          <p className={`mt-3 text-base ${state.notFound ? 'text-slate-600' : 'text-red-700'}`} role="alert">
+            {state.notFound ? 'That recipe may have been removed.' : state.error}
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
             {!state.notFound && (
-              <button
-                type="button"
-                onClick={() => setAttempt((n) => n + 1)}
-                className="bg-gray-800 text-white py-3 px-6 rounded-full text-lg font-semibold hover:bg-gray-700 transition duration-200"
-              >
+              <button type="button" onClick={() => setAttempt((n) => n + 1)} className="btn-primary">
                 Try again
               </button>
             )}
-            <Link to="/" className="bg-gray-200 text-gray-800 py-3 px-6 rounded-full text-lg font-semibold hover:bg-gray-300 transition duration-200">
-              Back to search
-            </Link>
+            <Link to="/" className="btn-quiet min-h-12">Back to search</Link>
           </div>
         </div>
       </Page>
@@ -95,100 +114,78 @@ const Recipe = () => {
 
   const { recipe } = state;
   const ingredients = toList(recipe.cooking_ingredients, ',');
-  const instructions = formatInstructions(recipe.cooking_instruction);
+  const steps = formatInstructions(recipe.cooking_instruction);
+  const facts = [
+    ['Prep', formatMinutes(recipe.prep_time)],
+    ['Cook', formatMinutes(recipe.cook_time)],
+    ['Total', formatMinutes(recipe.total_time)],
+    ['Course', displayLabel(recipe.course)],
+    ['Cuisine', displayLabel(recipe.cuisine)],
+    ['Diet', recipe.veg ? 'Vegetarian' : 'Non-vegetarian'],
+  ].filter(([, v]) => v);
 
   return (
     <Page>
-      <div className="max-w-4xl mx-auto p-6 bg-white border-2 border-black shadow-lg">
-        <Link to="/" className="inline-flex items-center text-gray-700 hover:text-black mb-4">
-          <ArrowLeft className="w-5 h-5 mr-1" /> Back to search
-        </Link>
-        <div className="flex items-start justify-between gap-4 mb-4">
-          <h1 className="text-3xl font-bold text-dark-600">{recipe.name}</h1>
-          <LikeButton liked={liked.includes(numericId)} onToggle={() => toggle(numericId)} className="shrink-0" />
+      <article className="mx-auto max-w-5xl px-5 pb-16 pt-4 lg:px-8 lg:pt-10">
+        <div className="max-w-3xl">
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="font-serif text-[28px] font-medium leading-tight tracking-[-0.01em] text-ink lg:text-[32px]">
+            {displayTitle(recipe.name)}
+          </h1>
+          <LikeButton liked={liked.includes(numericId)} onToggle={() => toggle(numericId)} className="-mr-2.5 mt-0.5 shrink-0 lg:mt-2" />
         </div>
-        <p className="text-gray-600 mb-6">{recipe.description}</p>
-        {recipe.veg ?
-          <p className="px-3 py-1 w-20 my-2 text-center rounded-full font-semibold bg-green-300 text-green-800">Veg</p> :
-          <p className="px-3 py-1 w-24 my-2 text-center rounded-full font-semibold bg-red-300 text-red-800">Non-Veg</p>
-        }
-
-        {recipe.image && (
-          <img
-            src={recipe.image}
-            alt={recipe.name}
-            className="w-full h-96 object-cover rounded-lg mb-6"
-            onError={(e) => { e.currentTarget.style.display = 'none'; }}
-          />
+        {recipe.description && (
+          <p className="mt-4 max-w-2xl text-lg leading-relaxed text-slate-600">{recipe.description}</p>
         )}
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          {[['Prep', recipe.prep_time], ['Cook', recipe.cook_time], ['Total', recipe.total_time]].map(([label, value]) => {
-            const text = formatMinutes(value);
-            return text ? (
-              <div key={label} className="flex items-center">
-                <Clock className="w-5 h-5 mr-2 text-dark-600" />
-                <span>{label} {text}</span>
-              </div>
-            ) : null;
-          })}
-          {recipe.course && (
-            <div className="flex items-center">
-              <Utensils className="w-5 h-5 mr-2 text-dark-600" />
-              <span>{recipe.course}</span>
-            </div>
-          )}
-        </div>
+        <dl className="mt-8 grid grid-cols-3 gap-x-6 gap-y-5 border-y border-slate-200 py-5 sm:grid-cols-6">
+          {facts.map(([label, value]) => (
+            <Fact key={label} label={label} value={value} veg={label === 'Diet' && recipe.veg} />
+          ))}
+        </dl>
 
-        <div className="mb-6">
-          <h2 className="text-2xl font-semibold mb-3 text-dark-600">Ingredients</h2>
-          <ol className="list-decimal list-inside">
+        <section className="mt-12">
+          <h2 className="font-serif text-2xl font-medium text-ink">Ingredients</h2>
+          <ul className="mt-4 grid grid-cols-1 gap-x-10 sm:grid-cols-2">
             {ingredients.map((ingredient, index) => (
-              <li key={index} className="text-gray-700">{ingredient}</li>
+              <li key={index} className="border-b border-slate-100 py-2.5 text-base text-slate-800">
+                {ingredient}
+              </li>
             ))}
-          </ol>
-        </div>
+          </ul>
+        </section>
 
-        <div>
-          <h2 className="text-2xl font-semibold mb-3 text-dark-600">Instructions</h2>
-          <ol className="space-y-4">
-            {instructions.map(({ stepNumber, lineOne, lineTwo }) => (
-              <li key={stepNumber} className="text-gray-700">
-                <div className="font-semibold mb-1">Step {stepNumber}:</div>
-                <div className="ml-4">
-                  <div>{lineOne}</div>
-                  {lineTwo && <div className="mt-1">{lineTwo}</div>}
-                </div>
+        <section className="mt-12">
+          <h2 className="font-serif text-2xl font-medium text-ink">Method</h2>
+          <ol className="mt-5 space-y-6">
+            {steps.map((text, i) => (
+              <li key={i} className="flex gap-5">
+                <span className="w-6 shrink-0 pt-px text-right font-serif text-lg leading-relaxed text-slate-500">{i + 1}</span>
+                <p className="max-w-[62ch] text-base leading-relaxed text-slate-800 lg:text-[17px]">{text}</p>
               </li>
             ))}
           </ol>
+        </section>
         </div>
+      </article>
 
-        <div className="mt-10">
-          <h2 className="text-2xl font-semibold mb-3 text-dark-600">More like this</h2>
-          {similar.status === 'loading' && <p className="text-gray-600">Finding similar recipes...</p>}
-          {similar.status === 'error' && <p className="text-gray-700" role="alert">Could not load similar recipes. {similar.error}</p>}
-          {similar.status === 'done' && similar.items.length === 0 && <p className="text-gray-600">No similar recipes found.</p>}
-          {similar.items.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {similar.items.map((r) => (
-                <RecipeCard key={r.id} recipe={r} liked={liked.includes(r.id)} onToggleLike={() => toggle(r.id)} />
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="mt-8 text-center">
-          <h2 className="text-xl font-semibold">Enjoy!</h2>
-          <div className="flex justify-center space-x-4 mt-2">
-            <span className="text-lg">¡Disfruta!</span>
-            <span className="text-lg">Bon appétit!</span>
-            <span className="text-lg">Guten Appetit!</span>
-            <span className="text-lg">Buon appetito!</span>
-            <span className="text-lg">いただきます！(Itadakimasu!)</span>
+      <section className="mx-auto max-w-5xl px-5 pb-16 lg:px-8">
+        <h2 className="pb-2 font-serif text-2xl font-medium text-ink">More like this</h2>
+        {similar.status === 'loading' && <Loading label="Finding similar recipes" />}
+        {similar.status === 'error' && (
+          <p className="py-6 text-base text-red-700" role="alert">Could not load similar recipes. {similar.error}</p>
+        )}
+        {similar.status === 'done' && similar.items.length === 0 && (
+          <p className="py-6 text-base text-slate-600">No similar recipes found.</p>
+        )}
+        {similar.items.length > 0 && (
+          <div className="grid grid-cols-1 gap-x-10 sm:grid-cols-2 lg:grid-cols-3">
+            {similar.items.map((r) => (
+              <RecipeCard key={r.id} recipe={r} liked={liked.includes(r.id)} onToggleLike={() => toggle(r.id)} />
+            ))}
           </div>
-        </div>
-      </div>
+        )}
+      </section>
     </Page>
   );
 };
