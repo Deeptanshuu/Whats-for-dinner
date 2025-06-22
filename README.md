@@ -50,14 +50,14 @@ for r in rec.similar(210, limit=3):   # 210 is Paneer And Spinach Puff
 
 ```
 1.00   40 min  Methi Chaman Recipe -Paneer In Dark Leafy Greens Based Gravy
-0.77   45 min  Palak Paneer Kathi Roll Recipe -High Protein Spinach Cottage Cheese Wraps Recipe
-0.69   60 min  Palak Paneer Recipe | Cottage Cheese In Spinach Gravy
+0.93   45 min  Palak Paneer Kathi Roll Recipe -High Protein Spinach Cottage Cheese Wraps Recipe
+0.91   60 min  Palak Paneer Recipe | Cottage Cheese In Spinach Gravy
 
 0.74  Creamed Spinach Recipe
 0.69  Spiced Turnips with Spinach Recipe
 0.68  Spinach Corn Sabzi Recipe
 
-0.84  Paneer Cheese Puffs Recipe
+0.83  Paneer Cheese Puffs Recipe
 0.83  Spinach and Paneer Cornmeal Roll Recipe
 0.81  Spinach Paneer Kofta Curry Recipe
 ```
@@ -161,7 +161,7 @@ docker build -t recipesense . && docker run -p 7860:7860 recipesense
 | Train ingredient vectors and the ranker, about 30 s | `python -m recsys.train` |
 | Evaluate the ingredient rankers on `test` | `python -m recsys.evaluate` |
 | Evaluate free-text search | `python -m recsys.eval_semantic` |
-| Tests (131) | `python -m pytest` |
+| Tests (132) | `python -m pytest` |
 | Web lint and build | `cd web && npm run lint && npm run build` |
 | Rebuild the README images | `node docs/images/src/build.mjs` (needs playwright-core, see the file header) |
 

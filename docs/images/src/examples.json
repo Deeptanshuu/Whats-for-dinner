@@ -78,7 +78,7 @@
         "veg": true,
         "cuisine": "North Indian Recipes",
         "course": "",
-        "score": 0.4311,
+        "score": 0.8909,
         "matched": [
           "paneer",
           "spinach leaf",
@@ -95,7 +95,7 @@
         "veg": true,
         "cuisine": "North Indian Recipes",
         "course": "Side Dish",
-        "score": 0.1938,
+        "score": 0.8454,
         "matched": [
           "turmeric powder",
           "paneer",
@@ -112,7 +112,7 @@
         "veg": true,
         "cuisine": "Indian",
         "course": "Snack",
-        "score": 0.18,
+        "score": 0.8428,
         "matched": [
           "turmeric powder",
           "paneer",
@@ -121,6 +121,38 @@
           "tomato"
         ],
         "n_ingredients": 16
+      },
+      {
+        "id": 852,
+        "title": "Whole Wheat Spinach Paneer Lifafa Paratha Recipe",
+        "total_time": 65,
+        "image": "https://www.archanaskitchen.com/images/archanaskitchen/1-Author/Jyothi_Rajesh/Whole_Wheat_Spinach_Paneer_Lifafa_Paratha.jpg",
+        "veg": false,
+        "cuisine": "Indian",
+        "course": "Lunch",
+        "score": 0.7483,
+        "matched": [
+          "paneer",
+          "spinach leaf",
+          "green chilli"
+        ],
+        "n_ingredients": 12
+      },
+      {
+        "id": 4676,
+        "title": "Palak Paneer Stuffed Paratha Recipe",
+        "total_time": 55,
+        "image": "https://www.archanaskitchen.com/images/archanaskitchen/0-Archanas-Kitchen-Recipes/2017/21-feb/Palak_Paratha_Stuffed_With_Paneer_Recipe-1.jpg",
+        "veg": true,
+        "cuisine": "Indian",
+        "course": "Indian Breakfast",
+        "score": 0.6846,
+        "matched": [
+          "paneer",
+          "spinach leaf",
+          "green chilli"
+        ],
+        "n_ingredients": 11
       }
     ]
   },

@@ -164,7 +164,7 @@ text(800, 268, `${t.recommend_median_ms} ms`, { size: 14, w: 600, fill: C.accent
 // Output: top results and the real top 3
 rect(260, 166, 300, 48, ST.plain);
 text(MX, 187, 'Top results', { f: 'serif', size: 16, w: 600, a: 'middle' });
-text(MX, 205, 'scores divided by the best one', { size: 11, fill: C.grey, a: 'middle' });
+text(MX, 205, 'scores scaled 0 to 1', { size: 11, fill: C.grey, a: 'middle' });
 arrow([[560, 190], [588, 190]]);
 ie.top.slice(0, 3).forEach((r, i) => {
   const y = 175 + i * 21;
