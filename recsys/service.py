@@ -13,7 +13,8 @@ import numpy as np
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-from .data import Vocabulary, load_recipes
+from .data import Vocabulary, load_recipes, split_ingredients
+from .palette import Palette
 from .registry import build_rankers
 from .taxonomy import (COURSE_GROUPS, CUISINE_GROUPS, course_group, course_options, cuisine_groups,
                        cuisine_options, resolve_course, resolve_cuisines)
@@ -72,7 +73,9 @@ class Recommender:
         df = self.recipes
         self._pos = {int(i): p for p, i in enumerate(df["raw_id"])}
         self._veg = df["veg"].to_numpy(dtype=bool)
-        self._card_rows = [self._card(row) for row in df.itertuples()]
+        self._palette = Palette(self.vocab, len(df))
+        self._card_rows = [{**self._card(row), "palette": self._palette.for_recipe(row.ingredients)}
+                           for row in df.itertuples()]
         self._names = [str(n).strip().lower() for n in df["name"]]
         groups = [cuisine_groups(c) for c in df["cuisine"]]
         self._cuisine_mask = {g: np.array([g in s for s in groups]) for g in CUISINE_GROUPS}
@@ -299,6 +302,9 @@ class Recommender:
             "cuisine": row["cuisine"],
             "cooking_ingredients": str(row["ingredients_name"]) if pd.notna(row["ingredients_name"]) else "",
             "cooking_instruction": row["instructions"],
+            "palette": card["palette"],
+            # One entry per ingredient in cooking_ingredients, in the same order.
+            "ingredient_colors": self._palette.colors(split_ingredients(row["ingredients_name"])),
         }
 
     # ----- semantic parts -----

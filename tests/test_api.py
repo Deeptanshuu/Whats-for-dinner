@@ -4,9 +4,9 @@ import pytest
 from server.app import create_app
 from recsys.service import Recommender
 
-CARD_KEYS = {"id", "title", "total_time", "image", "veg", "cuisine", "course", "score"}
+CARD_KEYS = {"id", "title", "total_time", "image", "veg", "cuisine", "course", "score", "palette"}
 DETAIL_KEYS = {"id", "name", "description", "veg", "image", "prep_time", "cook_time", "total_time",
-               "course", "cuisine", "cooking_ingredients", "cooking_instruction"}
+               "course", "cuisine", "cooking_ingredients", "cooking_instruction", "palette", "ingredient_colors"}
 
 
 def recommend(client, **body):
