@@ -1,11 +1,12 @@
 /* eslint-disable react/prop-types */
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useLayoutEffect, useRef } from 'react';
 import { X, Search, Plus } from 'lucide-react';
 import VegToggle from './VegToggle';
 import ModelPicker from './ModelPicker';
 import Section from './Section';
 import ingredientsData from '../ingredients.json';
 import { removeEmojis } from '../utils';
+import { useStored, getStored, setStored } from '../searchStore';
 
 const INGREDIENTS = ingredientsData.ingredients.map((name, i) => ({ id: `ing_${i}`, name: removeEmojis(name) }));
 // The list is ordered by how often an ingredient is used, so the first few are the useful defaults.
@@ -28,17 +29,23 @@ const SearchPanel = ({
   className = '',
   preset,
 }) => {
-  const [mode, setMode] = useState('ingredients');
-  const [model, setModel] = useState('learned');
-  const [isVeg, setIsVeg] = useState(false);
-  const [query, setQuery] = useState('');
+  const [mode, setMode] = useStored('mode', 'ingredients');
+  const [model, setModel] = useStored('model', 'learned');
+  const [isVeg, setIsVeg] = useStored('veg', false);
+  const [query, setQuery] = useStored('query', '');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedIngredients, setSelectedIngredients] = useState([]);
-  const [customIngredients, setCustomIngredients] = useState([]);
-  const [selectedCuisines, setSelectedCuisines] = useState([]);
-  const [selectedCourse, setSelectedCourse] = useState('');
-  const [expanded, setExpanded] = useState({ ingredients: true, cuisines: true, courses: true, model: true });
+  const [selectedIngredients, setSelectedIngredients] = useStored('ingredients', []);
+  const [customIngredients, setCustomIngredients] = useStored('custom', []);
+  const [selectedCuisines, setSelectedCuisines] = useStored('cuisines', []);
+  const [selectedCourse, setSelectedCourse] = useStored('course', '');
+  const [expanded, setExpanded] = useStored('expanded', { ingredients: true, cuisines: true, courses: true, model: true });
   const [hint, setHint] = useState('');
+  const scroller = useRef(null);
+
+  // On desktop the panel scrolls on its own; put it back where it was.
+  useLayoutEffect(() => {
+    if (scroller.current) scroller.current.scrollTop = getStored('panelScroll', 0);
+  }, []);
 
   useEffect(() => {
     if (!preset) return;
@@ -125,7 +132,11 @@ const SearchPanel = ({
 
   return (
     <div className={`flex-col ${className}`}>
-      <div className="px-5 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:px-8">
+      <div
+        ref={scroller}
+        onScroll={(e) => setStored('panelScroll', e.currentTarget.scrollTop)}
+        className="px-5 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:px-8"
+      >
         <div role="tablist" aria-label="Search mode" className="grid grid-cols-2 gap-1 rounded-full bg-[#efede8] p-1">
           {MODES.map((m) => (
             <button

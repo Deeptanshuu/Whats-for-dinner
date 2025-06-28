@@ -4,12 +4,14 @@ import Recipe from './components/Recipe';
 import Loading from './components/Loading';
 import Footer from './components/Footer';
 import WarningHeader from './components/WarningHeader';
+import ScrollManager from './components/ScrollManager';
 
 function App() {
   return (
     <div className="App">
       <WarningHeader />
       <Router>
+        <ScrollManager />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/recipe/:id" element={<Recipe />} />

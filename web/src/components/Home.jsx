@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { SlidersHorizontal } from 'lucide-react';
 import SearchPanel from './SearchPanel';
 import ResultsGrid from './ResultsGrid';
 import useLikes from '../useLikes';
 import { recommend, search, getMeta } from '../api';
 import Wordmark from './Wordmark';
+import { useStored, getStored, setStored, clearStored } from '../searchStore';
 
 const PAGE_SIZE = 12;
 const TAGLINE = 'Type what is in your kitchen. Get recipes that use it.';
@@ -22,34 +23,46 @@ const FALLBACK_META = {
   ],
 };
 
+// A search that was still running when the page was left cannot be resumed; show what was there before it.
+const settled = (r) => (r.status === 'loading' ? { ...r, status: r.items.length ? 'done' : 'idle' } : r);
+
 const Home = () => {
-  const [meta, setMeta] = useState({ ...FALLBACK_META, status: 'loading' });
-  const [results, setResults] = useState({ status: 'idle', items: [], error: '' });
-  const [lastRun, setLastRun] = useState(null);
-  const [timing, setTiming] = useState({ current: null, previous: null });
-  const [page, setPage] = useState(1);
+  // Everything about the search lives in the store, so coming back from a recipe
+  // shows the screen as it was left without asking the server again.
+  const [meta, setMeta] = useState(() => getStored('meta', { ...FALLBACK_META, status: 'loading' }));
+  const [results, setResults] = useStored('results', { status: 'idle', items: [], error: '' });
+  const [lastRun, setLastRun] = useStored('lastRun', null);
+  const [timing, setTiming] = useStored('timing', { current: null, previous: null });
+  const [page, setPage] = useStored('page', 1);
   // Phones only: after a search the controls fold into an "Edit search" row so results come first.
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useStored('collapsed', false);
   // An example description picked on the empty screen; the panel fills itself in and runs it.
   const [preset, setPreset] = useState(null);
   const { liked, toggle, clear } = useLikes();
   const resultRef = useRef(null);
   const reqId = useRef(0);
 
+  useLayoutEffect(() => {
+    setResults(settled);
+  }, [setResults]);
+
   useEffect(() => {
     const controller = new AbortController();
     getMeta({ signal: controller.signal })
       .then((data) => {
         const ok = (list) => Array.isArray(list) && list.length > 0;
-        setMeta({
+        const next = {
           cuisines: ok(data.cuisines) ? data.cuisines : FALLBACK_META.cuisines,
           courses: ok(data.courses) ? data.courses : FALLBACK_META.courses,
           models: ok(data.models) ? data.models : FALLBACK_META.models,
           status: ok(data.cuisines) && ok(data.courses) ? 'ok' : 'fallback',
-        });
+        };
+        // Keep the lists already on screen when nothing changed, so the panel does not redraw.
+        setMeta((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next));
+        if (next.status === 'ok') setStored('meta', next);
       })
       .catch((err) => {
-        if (err.name !== 'AbortError') setMeta({ ...FALLBACK_META, status: 'fallback' });
+        if (err.name !== 'AbortError') setMeta((prev) => (prev.status === 'ok' ? prev : { ...FALLBACK_META, status: 'fallback' }));
       });
     return () => controller.abort();
   }, []);
@@ -91,7 +104,7 @@ const Home = () => {
       if (id !== reqId.current) return;
       setResults({ status: 'error', items: [], error: err.message });
     }
-  }, [liked, modelLabel]);
+  }, [liked, modelLabel, setLastRun, setResults, setTiming, setPage]);
 
   const isPhone = () => window.matchMedia('(max-width: 1023px)').matches;
 
@@ -109,6 +122,8 @@ const Home = () => {
     setResults({ status: 'idle', items: [], error: '' });
     setLastRun(null);
     setTiming({ current: null, previous: null });
+    setPage(1);
+    clearStored();
   };
 
   const paginate = (n) => {
