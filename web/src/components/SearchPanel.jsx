@@ -101,11 +101,16 @@ const SearchPanel = ({
       onSearch({ mode, query: query.trim(), veg: isVeg });
       return;
     }
-    setHint('');
     const ingredients = [
       ...INGREDIENTS.filter((i) => selectedIngredients.includes(i.id)).map((i) => i.name),
       ...customIngredients,
     ];
+    // The API needs something to go on; say so here instead of sending an empty request.
+    if (!ingredients.length && !selectedCuisines.length && !selectedCourse && !likedCount) {
+      setHint('Pick at least one ingredient, cuisine or course first.');
+      return;
+    }
+    setHint('');
     onSearch({ mode, model: m, ingredients, cuisine: selectedCuisines, course: selectedCourse, veg: isVeg });
   };
 
