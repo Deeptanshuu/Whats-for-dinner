@@ -54,13 +54,13 @@ const ResultsGrid = ({
           <div className="h-8 w-48 rounded bg-[#efede8]" />
           <div className="mt-5 h-4 w-72 max-w-full rounded bg-[#efede8]" />
         </div>
-        <div className="grid grid-cols-1 gap-x-10 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-x-8 gap-y-10 border-t border-slate-200 pt-6 sm:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 6 }, (_, i) => (
-            <div key={i} className="border-t border-slate-200 pb-6 pt-5">
-              <div className="h-4 w-32 rounded bg-[#efede8]" />
-              <div className="mt-3 h-5 w-4/5 rounded bg-[#efede8]" />
-              <div className="mt-2 h-5 w-3/5 rounded bg-[#efede8]" />
-              <div className="mt-5 h-4 w-16 rounded bg-[#efede8]" />
+            <div key={i}>
+              <div className="aspect-[3/2] rounded-[3px] bg-[#efede8]" />
+              <div className="mt-5 h-4 w-32 rounded bg-[#efede8]" />
+              <div className="mt-4 h-5 w-4/5 rounded bg-[#efede8]" />
+              <div className="mt-4 h-4 w-16 rounded bg-[#efede8]" />
             </div>
           ))}
         </div>
@@ -126,18 +126,17 @@ const ResultsGrid = ({
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-x-10 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-x-8 gap-y-10 border-t border-slate-200 pt-6 sm:grid-cols-2 xl:grid-cols-3">
             {items.slice(start, start + pageSize).map((recipe) => (
               <RecipeCard
                 key={recipe.id}
                 recipe={recipe}
-                newTab
                 liked={liked.includes(recipe.id)}
                 onToggleLike={() => onToggleLike(recipe.id)}
               />
             ))}
           </div>
-          <div className="border-t border-slate-200 pt-6">
+          <div className="mt-10 border-t border-slate-200 pt-6">
             <Pagination total={items.length} pageSize={pageSize} currentPage={page} onPage={onPage} />
           </div>
         </>

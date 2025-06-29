@@ -28,6 +28,12 @@
   .chip-on {
     @apply border-ink bg-ink text-white hover:border-slate-700 hover:bg-slate-700 hover:text-white;
   }
+  /* The paper grain laid over every drawn cover; the image is set once by Cover.jsx. */
+  .cover-grain {
+    @apply pointer-events-none absolute inset-0 mix-blend-multiply;
+    background-image: var(--cover-grain, none);
+    background-size: 180px 180px;
+  }
   .label {
     @apply text-sm font-medium text-ink;
   }
